@@ -1,0 +1,20 @@
+house.db
+*.db
+__pycache__/
+.env
+.idea/
+
+# LLM / LoRA weights
+*.bin
+*.ckpt
+
+# =========================
+# LLM / LoRA weights
+# =========================
+app/ai/checkpoint-50/
+*.safetensors
+*.pt
+
+# HuggingFace cache
+hf_cache/
+.cache/

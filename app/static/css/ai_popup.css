@@ -1,0 +1,269 @@
+/* ================================
+   1. 팝업 배경
+================================ */
+.ai-modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: none;
+    z-index: 900;
+}
+
+/* ================================
+   2. 팝업 박스
+================================ */
+.ai-popup {
+    width: 400px;
+    height: 650px;
+    background: #ffffff;
+    border-radius: 12px;
+
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    display: none;
+    overflow: hidden;
+
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    border: 2px solid #123456;
+    z-index: 1000;
+}
+
+/* ================================
+   3. 헤더 (드래그 영역)
+================================ */
+.ai-popup-header {
+    background: #123456;
+    color: #ffffff;
+    padding: 12px;
+    font-weight: 600;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    cursor: move;
+}
+
+.ai-close-btn {
+    font-size: 20px;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+/* ================================
+   4. 모델 선택 박스
+================================ */
+.ai-model-wrap {
+    padding: 8px 14px;
+    background: #ffffff;
+    border-bottom: 1px solid #d5dbe5;
+    position: relative;
+}
+
+.ai-model-pill {
+    display: inline-flex;
+    align-items: center;
+
+    background: #f2f4fa;
+    border: 1px solid #cfd7e5;
+    border-radius: 20px;
+
+    padding: 6px 14px;
+    font-size: 13px;
+    color: #000;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ai-model-pill .arrow {
+    margin-left: 8px;
+    font-size: 11px;
+    color: #444;
+}
+
+.ai-model-dropdown {
+    position: absolute;
+    top: 48px;
+    left: 14px;
+
+    width: 180px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    background: #ffffff;
+    border: 1px solid #cfd7e5;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
+    display: none;
+    overflow: hidden;
+    z-index: 2000;
+}
+
+.ai-model-dropdown li {
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #000;
+    transition: background 0.2s;
+}
+
+.ai-model-dropdown li:hover {
+    background: #e8f0ff;
+}
+
+/* ================================
+   5. 메시지 영역
+================================ */
+.ai-popup-body {
+    height: 420px;
+    padding: 12px;
+    background: #f4f6fb;
+    overflow-y: auto;
+}
+
+.message {
+    max-width: 75%;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #000;
+    clear: both;
+}
+
+.message.user {
+    background: #ffe08c;
+    float: right;
+}
+
+.message.bot {
+    background: #d0e6ff;
+    float: left;
+}
+
+.message.loading {
+    background: #d0e6ff;
+    float: left;
+    padding: 8px 12px;
+    opacity: 0.8;
+}
+
+.loading-dots::after {
+    content: "...";
+    animation: dots 1.4s infinite;
+}
+
+@keyframes dots {
+    0% { content: ""; }
+    33% { content: "."; }
+    66% { content: ".."; }
+    100% { content: "..."; }
+}
+
+/* ================================
+   6. 입력창 + 버튼
+================================ */
+.ai-popup-input-wrap {
+    padding: 12px 14px;
+    background: #ffffff;
+    border-top: 1px solid #ddd;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ai-input {
+    width: 100%;
+    height: 50px;
+    resize: none;
+
+    padding: 10px;
+    font-size: 14px;
+
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.ai-btn-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 대화 지우기 */
+.ai-reset-btn {
+    padding: 6px 14px;
+    border: 1px solid #c7d1df;
+    border-radius: 8px;
+
+    background: #f2f4fa;
+    color: #123456;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.2s;
+}
+
+.ai-reset-btn:hover {
+    background: #e4e8f0;
+}
+
+/* 전송 버튼 */
+.ai-send-btn {
+    padding: 6px 16px;
+    border: none;
+
+    background: #ffe08c;
+    color: #000;
+    font-weight: bold;
+
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.ai-send-btn:disabled {
+    background: #eee;
+    color: #aaa;
+    cursor: not-allowed;
+}
+
+/* ================================
+   전체 팝업 기본 글자 크기 조정
+================================ */
+.ai-popup,
+.ai-popup * {
+    font-size: 15px !important;
+}
+
+/* 말풍선은 조금 더 크게 (가독성 향상) */
+.message {
+    font-size: 16px !important;
+}
+
+/* 모델 선택 pill, 드롭다운 */
+.ai-model-pill,
+.ai-model-dropdown li {
+    font-size: 15px !important;
+}
+
+/* 입력창 글씨 */
+.ai-input {
+    font-size: 15px !important;
+}
+
+/* 버튼 글씨 */
+.ai-reset-btn,
+.ai-send-btn {
+    font-size: 15px !important;
+}
+
