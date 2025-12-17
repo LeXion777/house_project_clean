@@ -29,8 +29,8 @@ def create_app():
     app.register_blueprint(login_views.bp)
     app.register_blueprint(inquiry_views.bp)
 
-    from app.ai import llama_views
+    from app.ai import llama_views, ai_views
     app.register_blueprint(ai_views.bp)
     app.register_blueprint(llama_views.bp)
-    
+
     return app
