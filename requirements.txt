@@ -36,6 +36,7 @@ regex
 tqdm
 accelerate
 bitsandbytes
+peft
 
 # =========================
 # Utils
