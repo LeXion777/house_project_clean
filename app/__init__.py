@@ -21,10 +21,6 @@ def create_app():
 
     from app import model
 
-    from app.ai import llama_views
-    # app.register_blueprint(ai_views.bp)
-    app.register_blueprint(llama_views.bp)
-
     # Blueprint 등록
     from .views import index_views, predict_views, support_views, login_views, inquiry_views
     app.register_blueprint(index_views.bp)
@@ -33,4 +29,8 @@ def create_app():
     app.register_blueprint(login_views.bp)
     app.register_blueprint(inquiry_views.bp)
 
+    from app.ai import llama_views
+    app.register_blueprint(ai_views.bp)
+    app.register_blueprint(llama_views.bp)
+    
     return app
