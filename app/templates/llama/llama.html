@@ -137,13 +137,9 @@
             overflow-y: auto;
         }
 
-        .settings h3 {
-            margin-top: 0;
-        }
+        .settings h3 { margin-top: 0; }
 
-        .param {
-            margin-bottom: 16px;
-        }
+        .param { margin-bottom: 16px; }
 
         .param label {
             font-size: 13px;
@@ -156,12 +152,10 @@
             align-items: center;
         }
 
-        .param-row input[type=range] {
-            flex: 1;
-        }
+        .param-row input[type=range] { flex: 1; }
 
         .param-row input[type=number] {
-            width: 64px;
+            width: 70px;
             background: var(--panel);
             border: 1px solid #1e293b;
             color: var(--text);
@@ -179,7 +173,7 @@
             margin-top: 12px;
         }
 
-        /* ===== APPLY LOADING OVERLAY ===== */
+        /* ===== OVERLAY ===== */
         .overlay {
             position: fixed;
             inset: 0;
@@ -194,69 +188,37 @@
             background: var(--panel);
             padding: 24px 32px;
             border-radius: 12px;
-            text-align: center;
             font-size: 16px;
         }
     </style>
 
     <script>
+        function sync(id) {
+            const range = document.getElementById(id);
+            const number = document.getElementById(id + "_num");
+
+            range.addEventListener("input", () => {
+                number.value = range.value;
+            });
+
+            number.addEventListener("input", () => {
+                range.value = number.value;
+            });
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
+            ["temperature", "top_p", "top_k", "max_tokens", "repetition_penalty"].forEach(sync);
+
             const textarea = document.getElementById("prompt");
             const sendBtn = document.getElementById("send");
-            const chat = document.querySelector(".chat");
-            const wrapper = document.querySelector(".chat-wrapper");
 
             sendBtn.disabled = true;
-
             textarea.addEventListener("input", () => {
                 sendBtn.disabled = textarea.value.trim() === "";
             });
 
-            // ===== CHAT SEND =====
-            sendBtn.addEventListener("click", async () => {
-                const text = textarea.value.trim();
-                if (!text) return;
-
-                const userMsg = document.createElement("div");
-                userMsg.className = "msg user";
-                userMsg.innerText = text;
-                chat.appendChild(userMsg);
-
-                const typing = document.createElement("div");
-                typing.className = "msg assistant typing";
-                chat.appendChild(typing);
-
-                wrapper.scrollTop = wrapper.scrollHeight;
-
-                sendBtn.disabled = true;
-                textarea.value = "";
-
-                const res = await fetch("/llama", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({
-                        prompt: text,
-                        system_prompt: "{{ system_prompt }}"
-                    })
-                });
-
-                const data = await res.json();
-                typing.remove();
-
-                const botMsg = document.createElement("div");
-                botMsg.className = "msg assistant";
-                botMsg.innerText = data.answer;
-                chat.appendChild(botMsg);
-
-                wrapper.scrollTop = wrapper.scrollHeight;
-            });
-
-            // ===== APPLY PARAMS LOADING =====
-            const paramForm = document.getElementById("paramForm");
-            const overlay = document.getElementById("overlay");
-
-            paramForm.addEventListener("submit", () => {
-                overlay.style.display = "flex";
+            document.getElementById("paramForm").addEventListener("submit", () => {
+                document.getElementById("overlay").style.display = "flex";
             });
         });
     </script>
@@ -300,41 +262,43 @@
         <div class="param">
             <label>Temperature</label>
             <div class="param-row">
-                <input type="range" name="temperature" min="0.1" max="1.5" step="0.1" value="{{ params.temperature }}">
-                <input type="number" step="0.1" value="{{ params.temperature }}">
+                <input id="temperature" type="range" min="0.1" max="1.5" step="0.1" value="{{ params.temperature }}">
+                <input id="temperature_num" name="temperature" type="number" step="0.1"
+                       value="{{ params.temperature }}">
             </div>
         </div>
 
         <div class="param">
             <label>Top-p</label>
             <div class="param-row">
-                <input type="range" name="top_p" min="0.1" max="1" step="0.05" value="{{ params.top_p }}">
-                <input type="number" step="0.05" value="{{ params.top_p }}">
+                <input id="top_p" type="range" min="0.1" max="1" step="0.05" value="{{ params.top_p }}">
+                <input id="top_p_num" name="top_p" type="number" step="0.05" value="{{ params.top_p }}">
             </div>
         </div>
 
         <div class="param">
             <label>Top-k</label>
             <div class="param-row">
-                <input type="range" name="top_k" min="0" max="100" step="1" value="{{ params.top_k }}">
-                <input type="number" step="1" value="{{ params.top_k }}">
+                <input id="top_k" type="range" min="0" max="100" step="1" value="{{ params.top_k }}">
+                <input id="top_k_num" name="top_k" type="number" step="1" value="{{ params.top_k }}">
             </div>
         </div>
 
         <div class="param">
             <label>Max Tokens</label>
             <div class="param-row">
-                <input type="range" name="max_tokens" min="32" max="2048" step="32" value="{{ params.max_tokens }}">
-                <input type="number" step="32" value="{{ params.max_tokens }}">
+                <input id="max_tokens" type="range" min="32" max="2048" step="32" value="{{ params.max_tokens }}">
+                <input id="max_tokens_num" name="max_tokens" type="number" step="32" value="{{ params.max_tokens }}">
             </div>
         </div>
 
         <div class="param">
             <label>Repetition Penalty</label>
             <div class="param-row">
-                <input type="range" name="repetition_penalty" min="1" max="1.5" step="0.05"
+                <input id="repetition_penalty" type="range" min="1" max="1.5" step="0.05"
                        value="{{ params.repetition_penalty }}">
-                <input type="number" step="0.05" value="{{ params.repetition_penalty }}">
+                <input id="repetition_penalty_num" name="repetition_penalty" type="number" step="0.05"
+                       value="{{ params.repetition_penalty }}">
             </div>
         </div>
 
