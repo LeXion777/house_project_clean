@@ -18,39 +18,32 @@ DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant."
 
 @bp.route("/llama", methods=["GET", "POST"])
 def llama_chat():
-    # =========================
-    # 세션 초기화
-    # =========================
     session.setdefault("chat_history", [])
     session.setdefault("params", DEFAULT_PARAMS.copy())
     session.setdefault("system_prompt", DEFAULT_SYSTEM_PROMPT)
 
     # =========================
-    # 🔥 JSON 요청 (fetch / typing UI)
+    # JSON 요청 (fetch)
     # =========================
     if request.method == "POST" and request.is_json:
-        data = request.get_json()
+        data = request.get_json() or {}
 
-        user_input = data.get("prompt", "").strip()
+        # ✅ 0) 대화 초기화
+        if data.get("action") == "reset_chat":
+            session["chat_history"] = []
+            session.modified = True
+            return jsonify({"ok": True})
+
+        # ✅ 1) 메시지 전송
+        user_input = (data.get("prompt") or "").strip()
         if not user_input:
             return jsonify({"answer": ""})
 
-        # system prompt 갱신 (옵션)
+        # system prompt 갱신(옵션)
         if "system_prompt" in data:
             session["system_prompt"] = data["system_prompt"]
 
-        session["chat_history"].append({
-            "role": "user",
-            "content": user_input
-        })
-
-        print("========== LLM CALL ==========")
-        print("System Prompt:")
-        print(session["system_prompt"])
-        print("Hyper Parameters:")
-        for k, v in session["params"].items():
-            print(f"  {k}: {v}")
-        print("================================")
+        session["chat_history"].append({"role": "user", "content": user_input})
 
         assistant_reply = generate_chat(
             session["chat_history"],
@@ -58,16 +51,13 @@ def llama_chat():
             **session["params"]
         )
 
-        session["chat_history"].append({
-            "role": "assistant",
-            "content": assistant_reply
-        })
+        session["chat_history"].append({"role": "assistant", "content": assistant_reply})
 
         session.modified = True
         return jsonify({"answer": assistant_reply})
 
     # =========================
-    # 기존 FORM 요청 처리
+    # FORM 요청 (Apply 등)
     # =========================
     if request.method == "POST":
         action = request.form.get("action")
@@ -81,30 +71,12 @@ def llama_chat():
             if "system_prompt" in request.form:
                 session["system_prompt"] = request.form["system_prompt"]
 
-        elif action == "send_message":
-            user_input = request.form.get("prompt", "").strip()
-            if user_input:
-                session["chat_history"].append({
-                    "role": "user",
-                    "content": user_input
-                })
-
-                assistant_reply = generate_chat(
-                    session["chat_history"],
-                    system_prompt=session["system_prompt"],
-                    **session["params"]
-                )
-
-                session["chat_history"].append({
-                    "role": "assistant",
-                    "content": assistant_reply
-                })
+        # (선택) 폼 방식으로도 초기화하고 싶으면 유지
+        elif action == "reset_chat":
+            session["chat_history"] = []
 
         session.modified = True
 
-    # =========================
-    # GET / 화면 렌더
-    # =========================
     return render_template(
         "llama/llama.html",
         chat_history=session["chat_history"],
