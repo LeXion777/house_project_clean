@@ -24,6 +24,7 @@
             overflow: hidden;
         }
 
+        /* ===== Layout ===== */
         .app {
             display: grid;
             grid-template-columns: 1fr 380px;
@@ -35,6 +36,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            min-height: 0; /* 🔥 스크롤 핵심 */
         }
 
         header {
@@ -47,6 +49,7 @@
         /* Chat */
         .chat-wrapper {
             flex: 1;
+            min-height: 0;           /* 🔥 스크롤 핵심 */
             overflow-y: auto;
             padding: 24px;
         }
@@ -74,18 +77,15 @@
             margin-right: auto;
         }
 
-        /* typing indicator */
-        .typing {
-            color: var(--muted);
+        .msg.typing {
             font-style: italic;
+            color: var(--muted);
         }
 
         /* Input */
         .input-bar {
-            position: sticky;
-            bottom: 0;
-            background: var(--panel);
             border-top: 1px solid #1e293b;
+            background: var(--panel);
             padding: 14px 24px;
         }
 
@@ -144,9 +144,13 @@
         .param-row {
             display: flex;
             gap: 10px;
+            align-items: center;
         }
 
-        .param-row input[type=range] { flex: 1; }
+        .param-row input[type=range] {
+            flex: 1;
+        }
+
         .param-row input[type=number] {
             width: 64px;
             background: var(--panel);
@@ -154,29 +158,39 @@
             color: var(--text);
             border-radius: 6px;
         }
+
+        /* Button */
+        .apply {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            background: #16a34a;
+            color: white;
+            cursor: pointer;
+        }
     </style>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const textarea = document.querySelector("textarea[name='prompt']");
-            const sendBtn = document.querySelector("button[type='submit']");
-            const chat = document.querySelector(".chat");
+        function sync(id) {
+            const r = document.getElementById(id);
+            const n = document.getElementById(id + "_num");
+            r.oninput = () => n.value = r.value;
+            n.oninput = () => r.value = n.value;
+        }
 
-            // Send 버튼 활성화 제어
+        document.addEventListener("DOMContentLoaded", () => {
+            ["temperature", "top_p", "top_k", "max_tokens", "repetition_penalty"]
+                .forEach(sync);
+
+            const textarea = document.querySelector("textarea[name='prompt']");
+            const sendBtn = document.querySelector(".input-inner button");
+
             textarea.addEventListener("input", () => {
                 sendBtn.disabled = textarea.value.trim() === "";
             });
-            sendBtn.disabled = true;
 
-            // submit 시 로딩 표시
-            document.querySelector(".input-bar form")?.addEventListener("submit", () => {
-                sendBtn.disabled = true;
-                const typing = document.createElement("div");
-                typing.className = "msg assistant typing";
-                typing.innerText = "답변을 생성중입니다...";
-                chat.appendChild(typing);
-                chat.parentElement.scrollTop = chat.parentElement.scrollHeight;
-            });
+            sendBtn.disabled = true;
         });
     </script>
 </head>
@@ -196,14 +210,11 @@
             </div>
         </div>
 
-        <!-- 🔥 Send 시 system_prompt도 같이 전송 -->
         <form method="post" class="input-bar">
             <div class="input-inner">
                 <textarea name="prompt" rows="2" placeholder="메시지를 입력하세요..."></textarea>
-
                 <input type="hidden" name="system_prompt" value="{{ system_prompt }}">
                 <input type="hidden" name="action" value="send_message">
-
                 <button type="submit">Send</button>
             </div>
         </form>
@@ -219,8 +230,46 @@
         <div class="param">
             <label>Temperature</label>
             <div class="param-row">
-                <input type="range" name="temperature" min="0.1" max="1.5" step="0.1" value="{{ params.temperature }}">
-                <input type="number" step="0.1" value="{{ params.temperature }}">
+                <input id="temperature" type="range" name="temperature" min="0.1" max="1.5" step="0.1"
+                       value="{{ params.temperature }}">
+                <input id="temperature_num" type="number" step="0.1" value="{{ params.temperature }}">
+            </div>
+        </div>
+
+        <div class="param">
+            <label>Top-p</label>
+            <div class="param-row">
+                <input id="top_p" type="range" name="top_p" min="0.1" max="1" step="0.05"
+                       value="{{ params.top_p }}">
+                <input id="top_p_num" type="number" step="0.05" value="{{ params.top_p }}">
+            </div>
+        </div>
+
+        <div class="param">
+            <label>Top-k</label>
+            <div class="param-row">
+                <input id="top_k" type="range" name="top_k" min="0" max="100" step="1"
+                       value="{{ params.top_k }}">
+                <input id="top_k_num" type="number" step="1" value="{{ params.top_k }}">
+            </div>
+        </div>
+
+        <div class="param">
+            <label>Max Tokens</label>
+            <div class="param-row">
+                <input id="max_tokens" type="range" name="max_tokens" min="32" max="2048" step="32"
+                       value="{{ params.max_tokens }}">
+                <input id="max_tokens_num" type="number" step="32" value="{{ params.max_tokens }}">
+            </div>
+        </div>
+
+        <div class="param">
+            <label>Repetition Penalty</label>
+            <div class="param-row">
+                <input id="repetition_penalty" type="range" name="repetition_penalty" min="1" max="1.5" step="0.05"
+                       value="{{ params.repetition_penalty }}">
+                <input id="repetition_penalty_num" type="number" step="0.05"
+                       value="{{ params.repetition_penalty }}">
             </div>
         </div>
 
