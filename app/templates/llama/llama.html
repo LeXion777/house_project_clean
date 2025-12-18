@@ -196,7 +196,7 @@
             });
 
             form.addEventListener("submit", () => {
-                // 1️⃣ 내 메시지 즉시 추가
+                // 1️⃣ 내 메시지 즉시 표시
                 const userMsg = document.createElement("div");
                 userMsg.className = "msg user";
                 userMsg.innerText = textarea.value;
@@ -214,8 +214,12 @@
                 sendBtn.disabled = true;
                 textarea.value = "";
 
-                // 4️⃣ 서버 응답 후 reload
-                iframe.onload = () => location.reload();
+                // 4️⃣ iframe 응답 후 약간 기다렸다가 reload (🔥 핵심)
+                iframe.onload = () => {
+                    setTimeout(() => {
+                        location.reload();
+                    }, 300);
+                };
             });
         });
     </script>
