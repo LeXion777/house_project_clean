@@ -44,6 +44,14 @@ def llama_chat():
             "content": user_input
         })
 
+        print("========== LLM CALL ==========")
+        print("System Prompt:")
+        print(session["system_prompt"])
+        print("Hyper Parameters:")
+        for k, v in session["params"].items():
+            print(f"  {k}: {v}")
+        print("================================")
+
         assistant_reply = generate_chat(
             session["chat_history"],
             system_prompt=session["system_prompt"],
