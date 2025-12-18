@@ -10,187 +10,192 @@
 
     <style>
         :root {
-            --bg: #0b1020;
-            --panel: #020617;
-            --primary: #2563eb;
-            --assistant: #1e293b;
-            --text: #e5e7eb;
-            --muted: #94a3b8;
-            --nav-h: 70px; /* ✅ 네비 높이(요구사항) */
+          --bg: #0b1020;
+          --panel: #020617;
+          --primary: #2563eb;
+          --assistant: #1e293b;
+          --text: #e5e7eb;
+          --muted: #94a3b8;
+          --nav-h: 70px; /* ✅ 네비 높이(요구사항) */
         }
 
         * { box-sizing: border-box; font-family: Pretendard, sans-serif; }
 
         html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
+          margin: 0;
+          padding: 0;
+          height: 100%;
         }
 
         body {
-            background: var(--bg);
-            color: var(--text);
-            overflow: hidden;                 /* ✅ 페이지 스크롤 제거 */
+          background: var(--bg);
+          color: var(--text);
+          overflow: hidden; /* ✅ 페이지 스크롤 제거 */
         }
 
         /* ✅ 네비+앱 전체를 한 화면에 고정: 네비(70px) + 앱(나머지) */
         .page-wrapper {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
         }
 
         /* ✅ 기존 llama 앱 높이를 네비만큼 줄여서 스크롤 없이 한 화면 */
         .app {
-            height: calc(100vh - var(--nav-h));
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            overflow: hidden;
+          height: calc(100vh - var(--nav-h));
+          display: grid;
+          grid-template-columns: 1fr 380px;
+          overflow: hidden;
         }
 
         /* ===== LEFT ===== */
         .main {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-height: 0;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          min-height: 0;
         }
 
         header {
-            padding: 14px 24px;
-            background: var(--panel);
-            border-bottom: 1px solid #1e293b;
-            font-weight: bold;
+          padding: 14px 24px;
+          background: var(--panel);
+          border-bottom: 1px solid #1e293b;
+          font-weight: bold;
 
-            /* ✅ 헤더에 안전하게 버튼 배치(우측) */
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+          /* ✅ 헤더에 안전하게 버튼 배치(우측) */
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          min-height: 52px;
         }
 
         .header-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          min-width: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
-        /* ✅ 대화 초기화 버튼(위험 줄이기: 작게 + 헤더 우측 + 경고색 + hover만 강조) */
+        /* ✅ 대화 초기화 버튼(위험 줄이기: 작게 + 헤더 우측 + 경고톤) */
         .reset-chat-btn {
-            padding: 8px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(239,68,68,0.55);
-            background: rgba(239,68,68,0.12);
-            color: #fecaca;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            white-space: nowrap;
+          padding: 8px 12px;
+          border-radius: 10px;
+          border: 1px solid rgba(239,68,68,0.55);
+          background: rgba(239,68,68,0.12);
+          color: #fecaca;
+          cursor: pointer;
+          font-weight: 700;
+          font-size: 13px;
+          white-space: nowrap;
+          line-height: 1;
         }
         .reset-chat-btn:hover {
-            background: rgba(239,68,68,0.18);
-            border-color: rgba(239,68,68,0.75);
+          background: rgba(239,68,68,0.18);
+          border-color: rgba(239,68,68,0.75);
         }
         .reset-chat-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         .chat-wrapper {
-            flex: 1;
-            min-height: 0;
-            overflow-y: auto;
-            padding: 24px;
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          padding: 24px;
         }
 
         .chat {
-            max-width: 900px;
-            margin: 0 auto;
+          max-width: 900px;
+          margin: 0 auto;
         }
 
         .msg {
-            max-width: 75%;
-            padding: 12px 16px;
-            border-radius: 14px;
-            margin-bottom: 14px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-break: break-word;
+          max-width: 75%;
+          padding: 12px 16px;
+          border-radius: 14px;
+          margin-bottom: 14px;
+          line-height: 1.6;
+          white-space: pre-wrap;
+          word-break: break-word;
         }
 
         .msg.user {
-            background: var(--primary);
-            margin-left: auto;
+          background: var(--primary);
+          margin-left: auto;
         }
 
         .msg.assistant {
-            background: var(--assistant);
-            margin-right: auto;
+          background: var(--assistant);
+          margin-right: auto;
         }
 
         .msg.typing {
-            background: var(--assistant);
-            color: var(--muted);
-            font-style: italic;
+          background: var(--assistant);
+          color: var(--muted);
+          font-style: italic;
         }
 
         .msg.typing::after {
-            content: "...";
-            animation: dots 1.2s infinite;
+          content: "...";
+          animation: dots 1.2s infinite;
         }
 
         @keyframes dots {
-            0% { content: "."; }
-            33% { content: ".."; }
-            66% { content: "..."; }
+          0% { content: "."; }
+          33% { content: ".."; }
+          66% { content: "..."; }
         }
 
         /* Input */
         .input-bar {
-            border-top: 1px solid #1e293b;
-            background: var(--panel);
-            padding: 14px 24px;
+          border-top: 1px solid #1e293b;
+          background: var(--panel);
+          padding: 14px 24px;
         }
 
         .input-inner {
-            max-width: 900px;
-            margin: 0 auto;
-            display: flex;
-            gap: 10px;
+          max-width: 900px;
+          margin: 0 auto;
+          display: flex;
+          gap: 10px;
         }
 
         textarea#prompt {
-            flex: 1;
-            resize: none;
-            padding: 12px;
-            border-radius: 10px;
-            background: var(--panel);
-            border: 1px solid #1e293b;
-            color: var(--text);
+          flex: 1;
+          resize: none;
+          padding: 12px;
+          border-radius: 10px;
+          background: var(--panel);
+          border: 1px solid #1e293b;
+          color: var(--text);
         }
 
         button {
-            padding: 0 20px;
-            border-radius: 10px;
-            border: none;
-            background: var(--primary);
-            color: white;
-            cursor: pointer;
+          padding: 0 20px;
+          border-radius: 10px;
+          border: none;
+          background: var(--primary);
+          color: white;
+          cursor: pointer;
         }
 
         button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         /* ===== RIGHT SETTINGS ===== */
         .settings {
-            background: var(--panel);
-            border-left: 1px solid #1e293b;
-            padding: 20px;
-            overflow-y: auto;
+          background: var(--panel);
+          border-left: 1px solid #1e293b;
+          padding: 20px;
+          overflow-y: auto;
         }
 
         .settings h3 { margin-top: 0; }
@@ -198,58 +203,58 @@
         .param { margin-bottom: 16px; }
 
         .param label {
-            font-size: 13px;
-            color: var(--muted);
-            display: block;
-            margin-bottom: 6px;
+          font-size: 13px;
+          color: var(--muted);
+          display: block;
+          margin-bottom: 6px;
         }
 
         .param-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
+          display: flex;
+          gap: 10px;
+          align-items: center;
         }
 
         .param-row input[type=range] { flex: 1; }
 
         .param-row input[type=number] {
-            width: 76px;
-            background: var(--panel);
-            border: 1px solid #1e293b;
-            color: var(--text);
-            border-radius: 6px;
-            padding: 6px 6px;
+          width: 76px;
+          background: var(--panel);
+          border: 1px solid #1e293b;
+          color: var(--text);
+          border-radius: 6px;
+          padding: 6px 6px;
         }
 
         .apply {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-            background: #16a34a;
-            color: white;
-            cursor: pointer;
-            margin-top: 12px;
+          width: 100%;
+          padding: 10px;
+          border-radius: 8px;
+          border: none;
+          background: #16a34a;
+          color: white;
+          cursor: pointer;
+          margin-top: 12px;
         }
 
         /* ===== OVERLAY (Apply/Reset 중 잠금) ===== */
         .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.6);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            pointer-events: all;
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.6);
+          display: none;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          pointer-events: all;
         }
 
         .overlay-box {
-            background: var(--panel);
-            padding: 24px 32px;
-            border-radius: 12px;
-            font-size: 16px;
-            border: 1px solid #1e293b;
+          background: var(--panel);
+          padding: 24px 32px;
+          border-radius: 12px;
+          font-size: 16px;
+          border: 1px solid #1e293b;
         }
 
         /* ======================================
@@ -257,36 +262,36 @@
            - 단, llama 페이지에서만 쓰도록 유지
         ====================================== */
         .predict-navbar {
-            background: linear-gradient(90deg, #0b1d33, #0f2a52);
-            height: var(--nav-h);
-            padding: 0 2rem !important;
-            border-bottom: none;
+          background: linear-gradient(90deg, #0b1d33, #0f2a52);
+          height: var(--nav-h);
+          padding: 0 2rem !important;
+          border-bottom: none;
         }
 
         .predict-navbar .nav-link {
-            color: #fff !important;
-            font-weight: 500;
-            font-size: 1rem;
-            transition: color 0.25s ease, transform 0.25s ease;
-            display: inline-block;
+          color: #fff !important;
+          font-weight: 500;
+          font-size: 1rem;
+          transition: color 0.25s ease, transform 0.25s ease;
+          display: inline-block;
         }
 
         .predict-navbar .nav-link:hover {
-            color: #ff6b00 !important;
-            transform: translateY(-2px);
+          color: #ff6b00 !important;
+          transform: translateY(-2px);
         }
 
         .predict-navbar .navbar-brand img {
-            height: 40px;
-            filter: brightness(1.1);
+          height: 40px;
+          filter: brightness(1.1);
         }
 
         .predict-navbar .navbar-toggler {
-            border-color: rgba(255,255,255,0.5);
+          border-color: rgba(255,255,255,0.5);
         }
 
         .predict-navbar .navbar-toggler-icon {
-            filter: brightness(200%);
+          filter: brightness(200%);
         }
     </style>
 
@@ -295,304 +300,272 @@
            DEFAULT PRESET (초기값)
         ========================================================= */
         const DEFAULT_PRESET = {
-            temperature: 0.7,
-            top_p: 0.9,
-            top_k: 50,
-            max_tokens: 512,
-            repetition_penalty: 1.1
+          temperature: 0.7,
+          top_p: 0.9,
+          top_k: 50,
+          max_tokens: 512,
+          repetition_penalty: 1.1
         };
 
         /* =========================================================
            Utility
         ========================================================= */
         function scrollToBottom(wrapper) {
-            requestAnimationFrame(() => {
-                wrapper.scrollTop = wrapper.scrollHeight;
-            });
+          requestAnimationFrame(() => {
+            wrapper.scrollTop = wrapper.scrollHeight;
+          });
         }
 
         // range <-> number 동기화 (양방향 + clamp)
         function bindRangeNumber(rangeEl, numberEl) {
-            if (!rangeEl || !numberEl) return;
+          if (!rangeEl || !numberEl) return;
 
-            const min = Number(rangeEl.min);
-            const max = Number(rangeEl.max);
-            const step = Number(rangeEl.step || 1);
+          const min = Number(rangeEl.min);
+          const max = Number(rangeEl.max);
+          const step = Number(rangeEl.step || 1);
 
-            const clampToStep = (val) => {
-                if (Number.isNaN(val)) return Number(rangeEl.value);
-                let v = Math.min(max, Math.max(min, val));
-                const decimals = (String(step).split(".")[1] || "").length;
-                const snapped = Math.round((v - min) / step) * step + min;
-                return Number(snapped.toFixed(decimals));
-            };
+          const clampToStep = (val) => {
+            if (Number.isNaN(val)) return Number(rangeEl.value);
+            let v = Math.min(max, Math.max(min, val));
+            const decimals = (String(step).split(".")[1] || "").length;
+            const snapped = Math.round((v - min) / step) * step + min;
+            return Number(snapped.toFixed(decimals));
+          };
 
-            const syncFromRange = () => {
-                numberEl.value = rangeEl.value;
-            };
+          const syncFromRange = () => {
+            numberEl.value = rangeEl.value;
+          };
 
-            const syncFromNumber = () => {
-                const v = clampToStep(Number(numberEl.value));
-                rangeEl.value = String(v);
-                numberEl.value = String(v);
-            };
+          const syncFromNumber = () => {
+            const v = clampToStep(Number(numberEl.value));
+            rangeEl.value = String(v);
+            numberEl.value = String(v);
+          };
 
-            rangeEl.addEventListener("input", syncFromRange);
-            numberEl.addEventListener("input", () => {
-                const raw = Number(numberEl.value);
-                if (Number.isNaN(raw)) return;
-                rangeEl.value = Math.min(max, Math.max(min, raw));
-            });
-            numberEl.addEventListener("change", syncFromNumber);
-            numberEl.addEventListener("blur", syncFromNumber);
+          rangeEl.addEventListener("input", syncFromRange);
+          numberEl.addEventListener("input", () => {
+            const raw = Number(numberEl.value);
+            if (Number.isNaN(raw)) return;
+            rangeEl.value = Math.min(max, Math.max(min, raw));
+          });
+          numberEl.addEventListener("change", syncFromNumber);
+          numberEl.addEventListener("blur", syncFromNumber);
 
-            syncFromRange();
+          syncFromRange();
         }
 
         // overlay 표시/숨김 + 전체 UI 잠금
         function setOverlay(show, text) {
-            const overlay = document.getElementById("overlay");
-            const box = document.getElementById("overlayText");
+          const overlay = document.getElementById("overlay");
+          const box = document.getElementById("overlayText");
 
-            if (text) box.textContent = text;
-            overlay.style.display = show ? "flex" : "none";
+          if (text) box.textContent = text;
+          overlay.style.display = show ? "flex" : "none";
 
-            if (show) {
-                document.body.dataset.prevOverflow = document.body.style.overflow || "";
-                document.body.style.overflow = "hidden";
-            } else {
-                document.body.style.overflow = document.body.dataset.prevOverflow || "";
-                delete document.body.dataset.prevOverflow;
-            }
+          if (show) {
+            document.body.dataset.prevOverflow = document.body.style.overflow || "";
+            document.body.style.overflow = "hidden";
+          } else {
+            document.body.style.overflow = document.body.dataset.prevOverflow || "";
+            delete document.body.dataset.prevOverflow;
+          }
         }
 
         // 파라미터 값 세팅 (range + number 동시에)
         function setParam(id, value) {
-            const range = document.getElementById(id);
-            const num = document.getElementById(id + "_num");
-            if (!range || !num) return;
+          const range = document.getElementById(id);
+          const num = document.getElementById(id + "_num");
+          if (!range || !num) return;
 
-            range.value = value;
-            num.value = value;
-            range.dispatchEvent(new Event("input"));
+          range.value = value;
+          num.value = value;
+          range.dispatchEvent(new Event("input"));
         }
 
-        /* =========================================================
-           DOMContentLoaded
-        ========================================================= */
         document.addEventListener("DOMContentLoaded", () => {
+          /* =======================
+             Elements
+          ======================= */
+          const textarea = document.getElementById("prompt");
+          const sendBtn = document.getElementById("send");
+          const resetChatBtn = document.getElementById("resetChat");
+          const resetChatForm = document.getElementById("resetChatForm");
 
-            /* =======================
-               Chat Elements
-            ======================= */
-            const textarea = document.getElementById("prompt");
-            const sendBtn = document.getElementById("send");
-            const resetChatBtn = document.getElementById("resetChat");  // ✅ 추가
-            const chat = document.querySelector(".chat");
-            const wrapper = document.querySelector(".chat-wrapper");
+          const chat = document.querySelector(".chat");
+          const wrapper = document.querySelector(".chat-wrapper");
+
+          const temperature = document.getElementById("temperature");
+          const temperature_num = document.getElementById("temperature_num");
+          const top_p = document.getElementById("top_p");
+          const top_p_num = document.getElementById("top_p_num");
+          const top_k = document.getElementById("top_k");
+          const top_k_num = document.getElementById("top_k_num");
+          const max_tokens = document.getElementById("max_tokens");
+          const max_tokens_num = document.getElementById("max_tokens_num");
+          const repetition_penalty = document.getElementById("repetition_penalty");
+          const repetition_penalty_num = document.getElementById("repetition_penalty_num");
+
+          scrollToBottom(wrapper);
+
+          /* =======================
+             Send enable/disable
+          ======================= */
+          sendBtn.disabled = true;
+          textarea.addEventListener("input", () => {
+            sendBtn.disabled = textarea.value.trim() === "";
+          });
+
+          textarea.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (!sendBtn.disabled) sendBtn.click();
+            }
+          });
+
+          /* =======================
+             Chat Send (JSON)
+          ======================= */
+          let isSending = false;
+          let isResetting = false;
+
+          sendBtn.addEventListener("click", async () => {
+            if (isSending || isResetting) return;
+
+            const text = textarea.value.trim();
+            if (!text) return;
+
+            isSending = true;
+
+            // 사용자 메시지 즉시 추가
+            const userMsg = document.createElement("div");
+            userMsg.className = "msg user";
+            userMsg.innerText = text;
+            chat.appendChild(userMsg);
+
+            // typing 추가
+            const typing = document.createElement("div");
+            typing.className = "msg assistant typing";
+            typing.innerText = "";
+            chat.appendChild(typing);
 
             scrollToBottom(wrapper);
 
-            // 입력 없으면 Send 비활성화
+            // 입력 잠금
+            textarea.value = "";
+            textarea.disabled = true;
             sendBtn.disabled = true;
-            textarea.addEventListener("input", () => {
-                sendBtn.disabled = textarea.value.trim() === "";
-            });
+            resetChatBtn.disabled = true;
 
-            // 엔터로 전송 (Shift+Enter 줄바꿈)
-            textarea.addEventListener("keydown", (e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (!sendBtn.disabled) sendBtn.click();
-                }
-            });
+            try {
+              const res = await fetch("/llama", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ prompt: text })
+              });
 
-            /* =======================
-               Chat Send
-            ======================= */
-            let isSending = false;
-            let isResetting = false;
+              if (!res.ok) throw new Error("HTTP " + res.status);
 
-            sendBtn.addEventListener("click", async () => {
-                if (isSending || isResetting) return;
+              const ct = res.headers.get("content-type") || "";
+              if (!ct.includes("application/json")) {
+                throw new Error("Invalid response type");
+              }
 
-                const text = textarea.value.trim();
-                if (!text) return;
+              const data = await res.json();
 
-                isSending = true;
+              typing.remove();
 
-                // 사용자 메시지 즉시 추가
-                const userMsg = document.createElement("div");
-                userMsg.className = "msg user";
-                userMsg.innerText = text;
-                chat.appendChild(userMsg);
+              const botMsg = document.createElement("div");
+              botMsg.className = "msg assistant";
+              botMsg.innerText = (data && data.answer) ? data.answer : "(빈 응답)";
+              chat.appendChild(botMsg);
 
-                // typing 추가
-                const typing = document.createElement("div");
-                typing.className = "msg assistant typing";
-                typing.innerText = "";
-                chat.appendChild(typing);
+              scrollToBottom(wrapper);
 
-                scrollToBottom(wrapper);
+            } catch (err) {
+              typing.remove();
 
-                // 입력 잠금
-                textarea.value = "";
-                textarea.disabled = true;
-                sendBtn.disabled = true;
-                resetChatBtn.disabled = true;
+              const errMsg = document.createElement("div");
+              errMsg.className = "msg assistant";
+              errMsg.innerText = "⚠️ 오류 발생\n" + err;
+              chat.appendChild(errMsg);
 
-                try {
-                    const res = await fetch("/llama", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ prompt: text })
-                    });
+              scrollToBottom(wrapper);
+            } finally {
+              textarea.disabled = false;
+              textarea.focus();
+              isSending = false;
 
-                    // 서버가 에러/HTML을 주는 경우 대비
-                    if (!res.ok) throw new Error("HTTP " + res.status);
+              sendBtn.disabled = true;       // 텍스트 비어있음
+              resetChatBtn.disabled = false; // 다시 활성화
+            }
+          });
 
-                    const ct = res.headers.get("content-type") || "";
-                    if (!ct.includes("application/json")) {
-                        throw new Error("Invalid response type");
-                    }
+          /* =======================
+             ✅ Chat Reset (FORM)
+             - 서버가 redirect/HTML로 응답해도 실패하지 않게
+             - confirm + overlay
+          ======================= */
+          resetChatBtn.addEventListener("click", () => {
+            if (isSending || isResetting) return;
 
-                    const data = await res.json();
+            const ok = confirm("대화 내역을 모두 초기화할까요?\n(새로고침해도 복구되지 않습니다)");
+            if (!ok) return;
 
-                    typing.remove();
+            isResetting = true;
 
-                    const botMsg = document.createElement("div");
-                    botMsg.className = "msg assistant";
-                    botMsg.innerText = (data && data.answer) ? data.answer : "(빈 응답)";
-                    chat.appendChild(botMsg);
+            textarea.disabled = true;
+            sendBtn.disabled = true;
+            resetChatBtn.disabled = true;
 
-                    scrollToBottom(wrapper);
+            setOverlay(true, "대화 초기화중입니다…");
 
-                } catch (err) {
-                    typing.remove();
+            // ✅ JSON fetch 대신 FORM submit (서버 redirect 구조와 100% 호환)
+            resetChatForm.submit();
+          });
 
-                    const errMsg = document.createElement("div");
-                    errMsg.className = "msg assistant";
-                    errMsg.innerText = "⚠️ 오류 발생\n" + err;
-                    chat.appendChild(errMsg);
+          /* =======================
+             Hyper Parameter Sync
+          ======================= */
+          bindRangeNumber(temperature, temperature_num);
+          bindRangeNumber(top_p, top_p_num);
+          bindRangeNumber(top_k, top_k_num);
+          bindRangeNumber(max_tokens, max_tokens_num);
+          bindRangeNumber(repetition_penalty, repetition_penalty_num);
 
-                    scrollToBottom(wrapper);
-                } finally {
-                    textarea.disabled = false;
-                    textarea.focus();
-                    isSending = false;
+          /* =======================
+             Reset Params Button
+          ======================= */
+          const resetParamsBtn = document.getElementById("resetParams");
+          resetParamsBtn.addEventListener("click", () => {
+            setParam("temperature", DEFAULT_PRESET.temperature);
+            setParam("top_p", DEFAULT_PRESET.top_p);
+            setParam("top_k", DEFAULT_PRESET.top_k);
+            setParam("max_tokens", DEFAULT_PRESET.max_tokens);
+            setParam("repetition_penalty", DEFAULT_PRESET.repetition_penalty);
+          });
 
-                    // 텍스트가 비어있으니 비활성 유지
-                    sendBtn.disabled = true;
-                    resetChatBtn.disabled = false;
-                }
-            });
+          /* =======================
+             Apply Params Overlay
+          ======================= */
+          const paramForm = document.getElementById("paramForm");
+          paramForm.addEventListener("submit", () => {
+            setOverlay(true, "하이퍼파라미터 적용중입니다…");
+          });
 
-            /* =======================
-               ✅ Chat Reset (안전: 헤더 우측 + confirm + overlay)
-            ======================= */
-            resetChatBtn.addEventListener("click", async () => {
-                if (isSending || isResetting) return;
-
-                const ok = confirm("대화 내역을 모두 초기화할까요?\n(새로고침해도 복구되지 않습니다)");
-                if (!ok) return;
-
-                isResetting = true;
-
-                textarea.disabled = true;
-                sendBtn.disabled = true;
-                resetChatBtn.disabled = true;
-
-                setOverlay(true, "대화 초기화중입니다…");
-
-                try {
-                    const res = await fetch("/llama", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "reset_chat" })
-                    });
-
-                    if (!res.ok) throw new Error("HTTP " + res.status);
-
-                    const ct = res.headers.get("content-type") || "";
-                    if (!ct.includes("application/json")) {
-                        throw new Error("Invalid response type");
-                    }
-
-                    const data = await res.json();
-                    if (!data || data.ok !== true) {
-                        throw new Error("Reset failed");
-                    }
-
-                    // 화면 즉시 초기화
-                    chat.innerHTML = "";
-                    const info = document.createElement("div");
-                    info.className = "msg assistant";
-                    info.innerText = "✅ 대화가 초기화되었습니다.";
-                    chat.appendChild(info);
-
-                    scrollToBottom(wrapper);
-
-                } catch (err) {
-                    const errMsg = document.createElement("div");
-                    errMsg.className = "msg assistant";
-                    errMsg.innerText = "⚠️ 대화 초기화 실패\n" + err;
-                    chat.appendChild(errMsg);
-                    scrollToBottom(wrapper);
-                } finally {
-                    setOverlay(false);
-
-                    textarea.disabled = false;
-                    textarea.focus();
-                    isResetting = false;
-
-                    // 텍스트 비어있음
-                    sendBtn.disabled = true;
-                    resetChatBtn.disabled = false;
-                }
-            });
-
-            /* =======================
-               Hyper Parameter Sync
-            ======================= */
-            bindRangeNumber(temperature, temperature_num);
-            bindRangeNumber(top_p, top_p_num);
-            bindRangeNumber(top_k, top_k_num);
-            bindRangeNumber(max_tokens, max_tokens_num);
-            bindRangeNumber(repetition_penalty, repetition_penalty_num);
-
-            /* =======================
-               Reset Params Button
-            ======================= */
-            const resetBtn = document.getElementById("resetParams");
-            resetBtn.addEventListener("click", () => {
-                setParam("temperature", DEFAULT_PRESET.temperature);
-                setParam("top_p", DEFAULT_PRESET.top_p);
-                setParam("top_k", DEFAULT_PRESET.top_k);
-                setParam("max_tokens", DEFAULT_PRESET.max_tokens);
-                setParam("repetition_penalty", DEFAULT_PRESET.repetition_penalty);
-            });
-
-            /* =======================
-               Apply Params Overlay
-            ======================= */
-            const paramForm = document.getElementById("paramForm");
-            paramForm.addEventListener("submit", () => {
-                setOverlay(true, "하이퍼파라미터 적용중입니다…");
-            });
-
-            // overlay 위에서 클릭/키보드 이벤트 먹기 (완전 잠금)
-            const overlay = document.getElementById("overlay");
-            overlay.addEventListener("click", (e) => e.preventDefault());
-            overlay.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
-            document.addEventListener("keydown", (e) => {
-                if (overlay.style.display === "flex") e.preventDefault();
-            }, { capture: true });
+          /* =======================
+             overlay 위에서 이벤트 먹기 (완전 잠금)
+          ======================= */
+          const overlay = document.getElementById("overlay");
+          overlay.addEventListener("click", (e) => e.preventDefault());
+          overlay.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+          document.addEventListener("keydown", (e) => {
+            if (overlay.style.display === "flex") e.preventDefault();
+          }, { capture: true });
         });
     </script>
 </head>
 
 <body>
-
 <div class="overlay" id="overlay">
     <div class="overlay-box" id="overlayText">하이퍼파라미터 적용중입니다…</div>
 </div>
@@ -615,12 +588,18 @@
 
             <div class="collapse navbar-collapse" id="topNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item ms-3"><a class="nav-link" href="{{ url_for('predict.predict_search') }}">전월세
-                        예측</a></li>
-                    <li class="nav-item ms-3"><a class="nav-link"
-                                                 href="{{ url_for('support.support_search') }}">정부지원</a></li>
-                    <li class="nav-item ms-3"><a class="nav-link" href="{{ url_for('login.login') }}">로그인</a></li>
-                    <li class="nav-item ms-3"><a class="nav-link" href="{{ url_for('login.signup') }}">회원가입</a></li>
+                    <li class="nav-item ms-3">
+                        <a class="nav-link" href="{{ url_for('predict.predict_search') }}">전월세 예측</a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <a class="nav-link" href="{{ url_for('support.support_search') }}">정부지원</a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <a class="nav-link" href="{{ url_for('login.login') }}">로그인</a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <a class="nav-link" href="{{ url_for('login.signup') }}">회원가입</a>
+                    </li>
                 </ul>
             </div>
 
@@ -634,8 +613,14 @@
         <div class="main">
             <header>
                 <div class="header-title">🦙 LLaMA3 8B Chat Playground</div>
+
                 <!-- ✅ 대화 초기화 버튼: 전송 버튼 옆이 아니라 "헤더 우측"에 작게 배치 -->
                 <button id="resetChat" type="button" class="reset-chat-btn">Reset Chat</button>
+
+                <!-- ✅ reset은 서버가 redirect로 처리하는 구조에 맞춰 FORM으로 제출 -->
+                <form id="resetChatForm" method="post" style="display:none;">
+                    <input type="hidden" name="action" value="reset_chat">
+                </form>
             </header>
 
             <div class="chat-wrapper">
@@ -649,7 +634,7 @@
             <div class="input-bar">
                 <div class="input-inner">
                     <textarea id="prompt" rows="2" placeholder="메시지를 입력하세요..."></textarea>
-                    <button id="send">Send</button>
+                    <button id="send" type="button">Send</button>
                 </div>
             </div>
         </div>
@@ -712,15 +697,15 @@
 
             <button type="button" id="resetParams"
                     style="width:100%; padding:10px; border-radius:8px;
-                   border:1px solid #1e293b; background:#334155;
-                   color:white; cursor:pointer; margin-top:12px;">
+                       border:1px solid #1e293b; background:#334155;
+                       color:white; cursor:pointer; margin-top:12px;">
                 Reset to Default
             </button>
+
             <button class="apply" type="submit">Apply Settings</button>
         </form>
 
     </div>
-
 </div>
 </body>
 </html>

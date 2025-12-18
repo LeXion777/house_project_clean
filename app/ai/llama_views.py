@@ -1,6 +1,6 @@
 # llama_views.py
 import logging
-from flask import Blueprint, render_template, request, session, jsonify
+from flask import Blueprint, render_template, request, session, jsonify, redirect, url_for
 from .llama_model import generate_chat
 
 bp = Blueprint("llama", __name__)
@@ -43,8 +43,7 @@ def _normalize_session_params() -> None:
 
     normalized = {}
     for k, default_v in DEFAULT_PARAMS.items():
-        v = raw.get(k, default_v)
-        normalized[k] = v
+        normalized[k] = raw.get(k, default_v)
 
     session["params"] = normalized
 
@@ -55,7 +54,7 @@ def llama_chat():
     # 세션 초기화/정규화
     # =========================
     session.setdefault("chat_history", [])
-    session.setdefault("params", {})  # ✅ 여기서 DEFAULT를 박아두지 말고 빈 dict로 두고
+    session.setdefault("params", {})  # ✅ 빈 dict로 두고 매 요청 정규화로 채움
     session.setdefault("system_prompt", DEFAULT_SYSTEM_PROMPT)
 
     # ✅ 매 요청마다 params 정규화(과거 세션 잔존 키 제거 + 기본값 채움)
@@ -71,7 +70,7 @@ def llama_chat():
         if not user_input:
             return jsonify({"answer": ""})
 
-        # (네 HTML fetch에서 system_prompt 제거했으면 이 블록은 없어도 됨)
+        # (HTML fetch에서 system_prompt 제거했으면 이 블록은 없어도 됨)
         if "system_prompt" in data and isinstance(data["system_prompt"], str):
             session["system_prompt"] = data["system_prompt"]
 
@@ -93,11 +92,19 @@ def llama_chat():
         return jsonify({"answer": assistant_reply})
 
     # =========================
-    # ✅ FORM 요청(Apply)
+    # ✅ FORM 요청(Apply / Reset Chat)
     # =========================
     if request.method == "POST":
-        action = request.form.get("action")
+        action = request.form.get("action", "")
 
+        # ✅ 대화 초기화 (새로 추가)
+        if action == "reset_chat":
+            session["chat_history"] = []
+            session.modified = True
+            log.info("[RESET_CHAT] chat_history cleared")
+            return redirect(url_for("llama.llama_chat"))
+
+        # ✅ Apply 파라미터/시스템프롬프트
         if action == "apply_params":
             # ✅ DEFAULT_PARAMS 기준(허용 키만)으로 업데이트
             for key in DEFAULT_PARAMS.keys():
@@ -118,7 +125,12 @@ def llama_chat():
             log.info("[APPLY] system_prompt=%r", session.get("system_prompt"))
             log.info("[APPLY] params=%s", session.get("params"))
 
+            session.modified = True
+            return redirect(url_for("llama.llama_chat"))
+
+        # 알 수 없는 action이 와도 화면은 정상 복귀
         session.modified = True
+        return redirect(url_for("llama.llama_chat"))
 
     # =========================
     # GET / 화면 렌더
