@@ -1,207 +1,241 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>LLaMA3 Chat Playground</title>
+    <meta charset="UTF-8">
+    <title>LLaMA3 Chat Playground</title>
 
-<style>
-:root {
-    --bg: #0f172a;
-    --panel: #020617;
-    --user: #2563eb;
-    --assistant: #16a34a;
-    --text: #e5e7eb;
-    --muted: #94a3b8;
-}
+    <style>
+        :root {
+            --bg: #0b1020;
+            --panel: #111827;
+            --card: #020617;
+            --primary: #2563eb;
+            --assistant: #1e293b;
+            --text: #e5e7eb;
+            --muted: #94a3b8;
+        }
 
-* {
-    box-sizing: border-box;
-    font-family: "Segoe UI", Pretendard, sans-serif;
-}
+        * { box-sizing: border-box; font-family: Pretendard, sans-serif; }
 
-body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-}
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
 
-.container {
-    max-width: 900px;
-    margin: auto;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
+        /* ===== Layout ===== */
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
 
-/* ===== Header ===== */
-header {
-    padding: 14px 20px;
-    background: #020617;
-    font-size: 18px;
-    font-weight: bold;
-    border-bottom: 1px solid #1e293b;
-}
+        header {
+            padding: 14px 20px;
+            background: #020617;
+            border-bottom: 1px solid #1e293b;
+            font-weight: bold;
+        }
 
-/* ===== Chat Area ===== */
-.chat-box {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-}
+        /* ===== Chat ===== */
+        .chat {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
 
-/* Message bubble */
-.message {
-    max-width: 70%;
-    padding: 12px 16px;
-    border-radius: 16px;
-    margin-bottom: 12px;
-    line-height: 1.5;
-    word-wrap: break-word;
-}
+        .msg {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
 
-.message.user {
-    background: var(--user);
-    margin-left: auto;
-    border-bottom-right-radius: 4px;
-}
+        .msg.user {
+            background: var(--primary);
+            margin-left: auto;
+        }
 
-.message.assistant {
-    background: #1e293b;
-    margin-right: auto;
-    border-bottom-left-radius: 4px;
-}
+        .msg.assistant {
+            background: var(--assistant);
+            margin-right: auto;
+        }
 
-/* ===== Input ===== */
-.input-area {
-    display: flex;
-    gap: 10px;
-    padding: 14px;
-    border-top: 1px solid #1e293b;
-    background: var(--panel);
-}
+        /* ===== Input Bar ===== */
+        .input-bar {
+            position: sticky;
+            bottom: 0;
+            display: flex;
+            gap: 10px;
+            padding: 12px;
+            background: #020617;
+            border-top: 1px solid #1e293b;
+        }
 
-.input-area textarea {
-    flex: 1;
-    resize: none;
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    background: #020617;
-    color: var(--text);
-}
+        .input-bar textarea {
+            flex: 1;
+            resize: none;
+            padding: 10px;
+            border-radius: 10px;
+            background: #020617;
+            border: 1px solid #1e293b;
+            color: var(--text);
+        }
 
-.input-area button {
-    padding: 0 20px;
-    border: none;
-    border-radius: 10px;
-    background: var(--user);
-    color: white;
-    cursor: pointer;
-}
+        .input-bar button {
+            padding: 0 18px;
+            border-radius: 10px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+        }
 
-/* ===== Settings Panel ===== */
-details {
-    background: #020617;
-    border-top: 1px solid #1e293b;
-}
+        /* ===== Settings Drawer ===== */
+        .settings {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 380px;
+            height: 100%;
+            background: #020617;
+            border-left: 1px solid #1e293b;
+            padding: 16px;
+            overflow-y: auto;
+        }
 
-summary {
-    padding: 14px;
-    cursor: pointer;
-    font-weight: bold;
-}
+        .settings h3 {
+            margin-top: 0;
+        }
 
-.settings {
-    padding: 16px;
-}
+        .param {
+            margin-bottom: 14px;
+        }
 
-.settings label {
-    font-size: 13px;
-    color: var(--muted);
-}
+        .param label {
+            font-size: 13px;
+            color: var(--muted);
+        }
 
-.settings input,
-.settings textarea {
-    width: 100%;
-    margin: 6px 0 14px;
-    padding: 8px;
-    background: #020617;
-    border: 1px solid #1e293b;
-    color: var(--text);
-    border-radius: 8px;
-}
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-.settings button {
-    margin-top: 10px;
-    padding: 10px 14px;
-    border: none;
-    border-radius: 8px;
-    background: var(--assistant);
-    color: white;
-    cursor: pointer;
-}
-</style>
+        .param-row input[type=range] {
+            flex: 1;
+        }
 
-<script>
-window.onload = () => {
-    const box = document.getElementById("chatBox");
-    box.scrollTop = box.scrollHeight;
-};
-</script>
+        .param-row input[type=number] {
+            width: 70px;
+            background: #020617;
+            border: 1px solid #1e293b;
+            color: var(--text);
+            border-radius: 6px;
+            padding: 4px;
+        }
+
+        /* ===== Buttons ===== */
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .apply { background: #16a34a; color: white; }
+        .reset { background: #7c2d12; color: white; margin-top: 8px; }
+
+        .toggle-settings {
+            position: fixed;
+            right: 16px;
+            bottom: 80px;
+            background: #2563eb;
+            border-radius: 50%;
+            width: 52px;
+            height: 52px;
+            color: white;
+            border: none;
+            font-size: 20px;
+        }
+    </style>
+
+    <script>
+        function sync(id) {
+            const r = document.getElementById(id);
+            const n = document.getElementById(id + "_num");
+            r.oninput = () => n.value = r.value;
+            n.oninput = () => r.value = n.value;
+        }
+
+        window.onload = () => {
+            ["temperature", "top_p", "repetition_penalty"].forEach(sync);
+            const chat = document.getElementById("chat");
+            chat.scrollTop = chat.scrollHeight;
+        };
+    </script>
 </head>
 
 <body>
-<div class="container">
+<div class="app">
 
-<header>
-    🦙 LLaMA3 8B Chat Playground
-</header>
+    <header>🦙 LLaMA3 8B Chat Playground</header>
 
-<div class="chat-box" id="chatBox">
-    {% for msg in chat_history %}
-        <div class="message {{ msg.role }}">
-            {{ msg.content }}
+    <div class="chat" id="chat">
+        {% for msg in chat_history %}
+        <div class="msg {{ msg.role }}">{{ msg.content }}</div>
+        {% endfor %}
+    </div>
+
+    <form method="post" class="input-bar">
+        <textarea name="prompt" rows="2" placeholder="메시지를 입력하세요..."></textarea>
+        <input type="hidden" name="action" value="send_message">
+        <button type="submit">Send</button>
+    </form>
+
+    <button class="toggle-settings" onclick="document.getElementById('settings').hidden ^= true">⚙️</button>
+
+    <form method="post" id="settings" class="settings" hidden>
+        <h3>System Prompt</h3>
+        <textarea name="system_prompt" rows="4" style="width:100%">{{ system_prompt }}</textarea>
+
+        <h3>Hyper Parameters</h3>
+
+        <div class="param">
+            <label>Temperature</label>
+            <div class="param-row">
+                <input id="temperature" type="range" name="temperature" min="0.1" max="1.5" step="0.1"
+                       value="{{ params.temperature }}">
+                <input id="temperature_num" type="number" step="0.1" value="{{ params.temperature }}">
+            </div>
         </div>
-    {% endfor %}
-</div>
 
-<!-- 메시지 입력 -->
-<form method="post" class="input-area">
-    <textarea name="prompt" rows="2" placeholder="메시지를 입력하세요..."></textarea>
-    <input type="hidden" name="action" value="send_message">
-    <button type="submit">Send</button>
-</form>
+        <div class="param">
+            <label>Top-p</label>
+            <div class="param-row">
+                <input id="top_p" type="range" name="top_p" min="0.1" max="1" step="0.05" value="{{ params.top_p }}">
+                <input id="top_p_num" type="number" step="0.05" value="{{ params.top_p }}">
+            </div>
+        </div>
 
-<!-- 설정 패널 -->
-<details>
-<summary>⚙️ System Prompt & Hyper Parameters</summary>
+        <div class="param">
+            <label>Repetition Penalty</label>
+            <div class="param-row">
+                <input id="repetition_penalty" type="range" name="repetition_penalty" min="1" max="1.5" step="0.05"
+                       value="{{ params.repetition_penalty }}">
+                <input id="repetition_penalty_num" type="number" step="0.05"
+                       value="{{ params.repetition_penalty }}">
+            </div>
+        </div>
 
-<form method="post" class="settings">
-    <label>System Prompt</label>
-    <textarea name="system_prompt" rows="4">{{ system_prompt }}</textarea>
-
-    <label>Temperature</label>
-    <input type="range" name="temperature" min="0.1" max="1.5" step="0.1"
-           value="{{ params.temperature }}">
-
-    <label>Top-p</label>
-    <input type="range" name="top_p" min="0.1" max="1" step="0.05"
-           value="{{ params.top_p }}">
-
-    <label>Top-k</label>
-    <input type="number" name="top_k" value="{{ params.top_k }}">
-
-    <label>Max Tokens</label>
-    <input type="number" name="max_tokens" value="{{ params.max_tokens }}">
-
-    <label>Repetition Penalty</label>
-    <input type="range" name="repetition_penalty" min="1" max="1.5" step="0.05"
-           value="{{ params.repetition_penalty }}">
-
-    <input type="hidden" name="action" value="apply_params">
-    <button type="submit">Apply Settings</button>
-</form>
-</details>
+        <input type="hidden" name="action" value="apply_params">
+        <button class="btn apply">Apply Settings</button>
+    </form>
 
 </div>
 </body>
