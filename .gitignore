@@ -12,6 +12,7 @@ __pycache__/
 # LLM / LoRA weights
 # =========================
 app/ai/checkpoint-50/
+app/ai/checkpoint-100/
 *.safetensors
 *.pt
 

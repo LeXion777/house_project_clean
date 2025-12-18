@@ -31,7 +31,7 @@ BASE_MODEL_NAME = "meta-llama/Meta-Llama-3-8B"
 # LoRA 파인튜닝 결과
 LORA_PATH = os.path.join(
     os.path.dirname(__file__),
-    "checkpoint-50"
+    "checkpoint-100"
 )
 
 tokenizer = None
@@ -99,21 +99,23 @@ def load_model():
 
 
 # =========================================================
-# Prompt 구성 (선생님 Alpaca 학습 포맷과 호환)
+# Prompt 구성 (Alpaca 학습 포맷과 호환)
 # =========================================================
-def build_prompt(chat_history):
+def build_prompt(chat_history, system_prompt):
+    prompt = f"""### System:
+    {system_prompt}
     """
-    Instruction Fine-Tuned 모델용 Prompt
-    """
-    last_user_msg = chat_history[-1]["content"]
 
-    prompt = f"""Below is an instruction that describes a task.
+    for msg in chat_history:
+        role = msg["role"]
+        content = msg["content"]
 
-### Instruction:
-{last_user_msg}
+        if role == "user":
+            prompt += f"\n### Instruction:\n{content}\n"
+        elif role == "assistant":
+            prompt += f"\n### Response:\n{content}\n"
 
-### Response:
-"""
+    prompt += "\n### Response:\n"
     return prompt
 
 
@@ -122,14 +124,18 @@ def build_prompt(chat_history):
 # =========================================================
 def generate_chat(
         chat_history,
+        system_prompt,
         temperature=0.7,
         top_p=0.9,
+        top_k=50,
         max_tokens=256,
-        repetition_penalty=1.1
+        repetition_penalty=1.1,
+        presence_penalty=0.0,
+        frequency_penalty=0.0
 ):
     load_model()
 
-    prompt = build_prompt(chat_history)
+    prompt = build_prompt(chat_history, system_prompt)
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
     with torch.no_grad():
@@ -138,11 +144,11 @@ def generate_chat(
             max_new_tokens=max_tokens,
             temperature=temperature,
             top_p=top_p,
+            top_k=top_k,
             repetition_penalty=repetition_penalty,
             do_sample=True,
             eos_token_id=tokenizer.eos_token_id
         )
 
     decoded = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
     return decoded.split("### Response:")[-1].strip()
