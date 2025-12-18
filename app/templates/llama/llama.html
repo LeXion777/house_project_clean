@@ -201,9 +201,21 @@
     </style>
 
     <script>
-        // ===== Utility =====
+        /* =========================================================
+           DEFAULT PRESET (초기값)
+        ========================================================= */
+        const DEFAULT_PRESET = {
+            temperature: 0.7,
+            top_p: 0.9,
+            top_k: 50,
+            max_tokens: 512,
+            repetition_penalty: 1.1
+        };
+
+        /* =========================================================
+           Utility
+        ========================================================= */
         function scrollToBottom(wrapper) {
-            // requestAnimationFrame로 DOM 반영 후 스크롤
             requestAnimationFrame(() => {
                 wrapper.scrollTop = wrapper.scrollHeight;
             });
@@ -220,18 +232,15 @@
             const clampToStep = (val) => {
                 if (Number.isNaN(val)) return Number(rangeEl.value);
                 let v = Math.min(max, Math.max(min, val));
-                // step 정렬 (소수 step도 안전하게 처리)
                 const decimals = (String(step).split(".")[1] || "").length;
                 const snapped = Math.round((v - min) / step) * step + min;
                 return Number(snapped.toFixed(decimals));
             };
 
-            // range -> number
             const syncFromRange = () => {
                 numberEl.value = rangeEl.value;
             };
 
-            // number -> range (입력 중엔 즉시, blur 시 최종 clamp)
             const syncFromNumber = () => {
                 const v = clampToStep(Number(numberEl.value));
                 rangeEl.value = String(v);
@@ -240,28 +249,24 @@
 
             rangeEl.addEventListener("input", syncFromRange);
             numberEl.addEventListener("input", () => {
-                // 입력 중에도 range를 따라오게
                 const raw = Number(numberEl.value);
                 if (Number.isNaN(raw)) return;
-                const v = Math.min(max, Math.max(min, raw));
-                rangeEl.value = String(v);
+                rangeEl.value = Math.min(max, Math.max(min, raw));
             });
             numberEl.addEventListener("change", syncFromNumber);
             numberEl.addEventListener("blur", syncFromNumber);
 
-            // 초기 1회 동기화
             syncFromRange();
         }
 
-        // overlay 표시/숨김 + 페이지 전체 입력 차단
+        // overlay 표시/숨김 + 전체 UI 잠금
         function setOverlay(show, text) {
             const overlay = document.getElementById("overlay");
             const box = document.getElementById("overlayText");
-            if (text) box.textContent = text;
 
+            if (text) box.textContent = text;
             overlay.style.display = show ? "flex" : "none";
 
-            // show 동안 body 스크롤/키보드 방지
             if (show) {
                 document.body.dataset.prevOverflow = document.body.style.overflow || "";
                 document.body.style.overflow = "hidden";
@@ -271,23 +276,37 @@
             }
         }
 
+        // 파라미터 값 세팅 (range + number 동시에)
+        function setParam(id, value) {
+            const range = document.getElementById(id);
+            const num = document.getElementById(id + "_num");
+            if (!range || !num) return;
+
+            range.value = value;
+            num.value = value;
+            range.dispatchEvent(new Event("input"));
+        }
+
+        /* =========================================================
+           DOMContentLoaded
+        ========================================================= */
         document.addEventListener("DOMContentLoaded", () => {
-            // ===== Chat elements =====
+
+            /* =======================
+               Chat Elements
+            ======================= */
             const textarea = document.getElementById("prompt");
             const sendBtn = document.getElementById("send");
             const chat = document.querySelector(".chat");
             const wrapper = document.querySelector(".chat-wrapper");
 
-            // 초기 스크롤
             scrollToBottom(wrapper);
 
-            // 입력 없으면 Send 비활성화
             sendBtn.disabled = true;
             textarea.addEventListener("input", () => {
                 sendBtn.disabled = textarea.value.trim() === "";
             });
 
-            // 엔터로 전송 (Shift+Enter 줄바꿈)
             textarea.addEventListener("keydown", (e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -295,7 +314,9 @@
                 }
             });
 
-            // ===== Chat send =====
+            /* =======================
+               Chat Send
+            ======================= */
             let isSending = false;
 
             sendBtn.addEventListener("click", async () => {
@@ -306,21 +327,17 @@
 
                 isSending = true;
 
-                // 사용자 메시지 즉시 추가
                 const userMsg = document.createElement("div");
                 userMsg.className = "msg user";
                 userMsg.innerText = text;
                 chat.appendChild(userMsg);
 
-                // typing 추가
                 const typing = document.createElement("div");
                 typing.className = "msg assistant typing";
-                typing.innerText = "";
                 chat.appendChild(typing);
 
                 scrollToBottom(wrapper);
 
-                // 입력 잠금
                 textarea.value = "";
                 textarea.disabled = true;
                 sendBtn.disabled = true;
@@ -328,81 +345,80 @@
                 try {
                     const res = await fetch("/llama", {
                         method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({
-                            prompt: text,
-                            system_prompt: "{{ system_prompt }}"
-                        })
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ prompt: text })
                     });
 
-                    // 서버가 에러/HTML을 주는 경우 대비
-                    if (!res.ok) {
-                        throw new Error("Server error: " + res.status);
-                    }
+                    if (!res.ok) throw new Error("HTTP " + res.status);
 
                     const ct = res.headers.get("content-type") || "";
                     if (!ct.includes("application/json")) {
-                        throw new Error("Response is not JSON (content-type=" + ct + ")");
+                        throw new Error("Invalid response type");
                     }
 
                     const data = await res.json();
-
                     typing.remove();
 
                     const botMsg = document.createElement("div");
                     botMsg.className = "msg assistant";
-                    botMsg.innerText = (data && data.answer) ? data.answer : "(빈 응답)";
+                    botMsg.innerText = data.answer || "(빈 응답)";
                     chat.appendChild(botMsg);
 
                     scrollToBottom(wrapper);
+
                 } catch (err) {
-                    // typing 제거 + 에러 메시지 출력
                     typing.remove();
-
-                    const botMsg = document.createElement("div");
-                    botMsg.className = "msg assistant";
-                    botMsg.innerText = "⚠️ 오류가 발생했습니다. (서버 응답 확인 필요)\n" + String(err);
-                    chat.appendChild(botMsg);
-
+                    const errMsg = document.createElement("div");
+                    errMsg.className = "msg assistant";
+                    errMsg.innerText = "⚠️ 오류 발생\n" + err;
+                    chat.appendChild(errMsg);
                     scrollToBottom(wrapper);
                 } finally {
-                    // 입력 복구
                     textarea.disabled = false;
                     textarea.focus();
                     isSending = false;
-                    // 텍스트가 비어있으니 비활성 유지
                     sendBtn.disabled = true;
                 }
             });
 
-            // ===== Hyper params sync =====
-            bindRangeNumber(document.getElementById("temperature"), document.getElementById("temperature_num"));
-            bindRangeNumber(document.getElementById("top_p"), document.getElementById("top_p_num"));
-            bindRangeNumber(document.getElementById("top_k"), document.getElementById("top_k_num"));
-            bindRangeNumber(document.getElementById("max_tokens"), document.getElementById("max_tokens_num"));
-            bindRangeNumber(document.getElementById("repetition_penalty"), document.getElementById("repetition_penalty_num"));
+            /* =======================
+               Hyper Parameter Sync
+            ======================= */
+            bindRangeNumber(temperature, temperature_num);
+            bindRangeNumber(top_p, top_p_num);
+            bindRangeNumber(top_k, top_k_num);
+            bindRangeNumber(max_tokens, max_tokens_num);
+            bindRangeNumber(repetition_penalty, repetition_penalty_num);
 
-            // ===== Apply params loading =====
-            const paramForm = document.getElementById("paramForm");
-            paramForm.addEventListener("submit", () => {
-                // apply 중엔 전체 UI 잠금
-                setOverlay(true, "하이퍼파라미터 적용중입니다…");
-
-                // submit 이후 실제 서버 응답까지는 브라우저가 이동/리로드 할 수 있으므로
-                // overlay는 유지되고, 페이지가 돌아오면 자동 해제됨.
+            /* =======================
+               Reset Button
+            ======================= */
+            const resetBtn = document.getElementById("resetParams");
+            resetBtn.addEventListener("click", () => {
+                setParam("temperature", DEFAULT_PRESET.temperature);
+                setParam("top_p", DEFAULT_PRESET.top_p);
+                setParam("top_k", DEFAULT_PRESET.top_k);
+                setParam("max_tokens", DEFAULT_PRESET.max_tokens);
+                setParam("repetition_penalty", DEFAULT_PRESET.repetition_penalty);
             });
 
-            // overlay 위에서 클릭/키보드 이벤트 먹기 (완전 잠금)
+            /* =======================
+               Apply Params Overlay
+            ======================= */
+            const paramForm = document.getElementById("paramForm");
+            paramForm.addEventListener("submit", () => {
+                setOverlay(true, "하이퍼파라미터 적용중입니다…");
+            });
+
             const overlay = document.getElementById("overlay");
             overlay.addEventListener("click", (e) => e.preventDefault());
             overlay.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
             document.addEventListener("keydown", (e) => {
-                if (document.getElementById("overlay").style.display === "flex") {
-                    e.preventDefault();
-                }
+                if (overlay.style.display === "flex") e.preventDefault();
             }, { capture: true });
         });
     </script>
+
 </head>
 
 <body>
@@ -441,7 +457,7 @@
         <h3>Hyper Parameters</h3>
 
         <div class="param">
-            <label>Temperature</label>
+            <label>Temperature (랜덤성)</label>
             <div class="param-row">
                 <input id="temperature" type="range" min="0.1" max="1.5" step="0.1" value="{{ params.temperature }}">
                 <input id="temperature_num" name="temperature" type="number" min="0.1" max="1.5" step="0.1"
@@ -450,7 +466,7 @@
         </div>
 
         <div class="param">
-            <label>Top-p</label>
+            <label>Top-p (Nucleus Sampling)</label>
             <div class="param-row">
                 <input id="top_p" type="range" min="0.1" max="1" step="0.05" value="{{ params.top_p }}">
                 <input id="top_p_num" name="top_p" type="number" min="0.1" max="1" step="0.05"
@@ -459,7 +475,7 @@
         </div>
 
         <div class="param">
-            <label>Top-k</label>
+            <label>Top-k (확률 상위 k개 토큰)</label>
             <div class="param-row">
                 <input id="top_k" type="range" min="0" max="100" step="1" value="{{ params.top_k }}">
                 <input id="top_k_num" name="top_k" type="number" min="0" max="100" step="1" value="{{ params.top_k }}">
@@ -467,7 +483,7 @@
         </div>
 
         <div class="param">
-            <label>Max Tokens</label>
+            <label>Max Tokens (응답 길이 상한)</label>
             <div class="param-row">
                 <input id="max_tokens" type="range" min="32" max="2048" step="32" value="{{ params.max_tokens }}">
                 <input id="max_tokens_num" name="max_tokens" type="number" min="32" max="2048" step="32"
@@ -476,7 +492,7 @@
         </div>
 
         <div class="param">
-            <label>Repetition Penalty</label>
+            <label>Repetition Penalty (중복 억제)</label>
             <div class="param-row">
                 <input id="repetition_penalty" type="range" min="1" max="1.5" step="0.05"
                        value="{{ params.repetition_penalty }}">
@@ -486,6 +502,13 @@
         </div>
 
         <input type="hidden" name="action" value="apply_params">
+
+        <button type="button" id="resetParams"
+                style="width:100%; padding:10px; border-radius:8px;
+               border:1px solid #1e293b; background:#334155;
+               color:white; cursor:pointer; margin-top:12px;">
+            Reset to Default
+        </button>
         <button class="apply" type="submit">Apply Settings</button>
     </form>
 
