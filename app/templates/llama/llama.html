@@ -62,6 +62,40 @@
             background: var(--panel);
             border-bottom: 1px solid #1e293b;
             font-weight: bold;
+
+            /* ✅ 헤더에 안전하게 버튼 배치(우측) */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        /* ✅ 대화 초기화 버튼(위험 줄이기: 작게 + 헤더 우측 + 경고색 + hover만 강조) */
+        .reset-chat-btn {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(239,68,68,0.55);
+            background: rgba(239,68,68,0.12);
+            color: #fecaca;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .reset-chat-btn:hover {
+            background: rgba(239,68,68,0.18);
+            border-color: rgba(239,68,68,0.75);
+        }
+        .reset-chat-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .chat-wrapper {
@@ -198,7 +232,7 @@
             margin-top: 12px;
         }
 
-        /* ===== OVERLAY (Apply 중 잠금) ===== */
+        /* ===== OVERLAY (Apply/Reset 중 잠금) ===== */
         .overlay {
             position: fixed;
             inset: 0;
@@ -353,16 +387,19 @@
             ======================= */
             const textarea = document.getElementById("prompt");
             const sendBtn = document.getElementById("send");
+            const resetChatBtn = document.getElementById("resetChat");  // ✅ 추가
             const chat = document.querySelector(".chat");
             const wrapper = document.querySelector(".chat-wrapper");
 
             scrollToBottom(wrapper);
 
+            // 입력 없으면 Send 비활성화
             sendBtn.disabled = true;
             textarea.addEventListener("input", () => {
                 sendBtn.disabled = textarea.value.trim() === "";
             });
 
+            // 엔터로 전송 (Shift+Enter 줄바꿈)
             textarea.addEventListener("keydown", (e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -374,35 +411,104 @@
                Chat Send
             ======================= */
             let isSending = false;
+            let isResetting = false;
 
             sendBtn.addEventListener("click", async () => {
-                if (isSending) return;
+                if (isSending || isResetting) return;
 
                 const text = textarea.value.trim();
                 if (!text) return;
 
                 isSending = true;
 
+                // 사용자 메시지 즉시 추가
                 const userMsg = document.createElement("div");
                 userMsg.className = "msg user";
                 userMsg.innerText = text;
                 chat.appendChild(userMsg);
 
+                // typing 추가
                 const typing = document.createElement("div");
                 typing.className = "msg assistant typing";
+                typing.innerText = "";
                 chat.appendChild(typing);
 
                 scrollToBottom(wrapper);
 
+                // 입력 잠금
                 textarea.value = "";
                 textarea.disabled = true;
                 sendBtn.disabled = true;
+                resetChatBtn.disabled = true;
 
                 try {
                     const res = await fetch("/llama", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ prompt: text })
+                    });
+
+                    // 서버가 에러/HTML을 주는 경우 대비
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+
+                    const ct = res.headers.get("content-type") || "";
+                    if (!ct.includes("application/json")) {
+                        throw new Error("Invalid response type");
+                    }
+
+                    const data = await res.json();
+
+                    typing.remove();
+
+                    const botMsg = document.createElement("div");
+                    botMsg.className = "msg assistant";
+                    botMsg.innerText = (data && data.answer) ? data.answer : "(빈 응답)";
+                    chat.appendChild(botMsg);
+
+                    scrollToBottom(wrapper);
+
+                } catch (err) {
+                    typing.remove();
+
+                    const errMsg = document.createElement("div");
+                    errMsg.className = "msg assistant";
+                    errMsg.innerText = "⚠️ 오류 발생\n" + err;
+                    chat.appendChild(errMsg);
+
+                    scrollToBottom(wrapper);
+                } finally {
+                    textarea.disabled = false;
+                    textarea.focus();
+                    isSending = false;
+
+                    // 텍스트가 비어있으니 비활성 유지
+                    sendBtn.disabled = true;
+                    resetChatBtn.disabled = false;
+                }
+            });
+
+            /* =======================
+               ✅ Chat Reset (안전: 헤더 우측 + confirm + overlay)
+            ======================= */
+            resetChatBtn.addEventListener("click", async () => {
+                if (isSending || isResetting) return;
+
+                const ok = confirm("대화 내역을 모두 초기화할까요?\n(새로고침해도 복구되지 않습니다)");
+                if (!ok) return;
+
+                isResetting = true;
+
+                textarea.disabled = true;
+                sendBtn.disabled = true;
+                resetChatBtn.disabled = true;
+
+                setOverlay(true, "대화 초기화중입니다…");
+
+                try {
+                    const res = await fetch("/llama", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "reset_chat" })
                     });
 
                     if (!res.ok) throw new Error("HTTP " + res.status);
@@ -413,27 +519,35 @@
                     }
 
                     const data = await res.json();
-                    typing.remove();
+                    if (!data || data.ok !== true) {
+                        throw new Error("Reset failed");
+                    }
 
-                    const botMsg = document.createElement("div");
-                    botMsg.className = "msg assistant";
-                    botMsg.innerText = data.answer || "(빈 응답)";
-                    chat.appendChild(botMsg);
+                    // 화면 즉시 초기화
+                    chat.innerHTML = "";
+                    const info = document.createElement("div");
+                    info.className = "msg assistant";
+                    info.innerText = "✅ 대화가 초기화되었습니다.";
+                    chat.appendChild(info);
 
                     scrollToBottom(wrapper);
 
                 } catch (err) {
-                    typing.remove();
                     const errMsg = document.createElement("div");
                     errMsg.className = "msg assistant";
-                    errMsg.innerText = "⚠️ 오류 발생\n" + err;
+                    errMsg.innerText = "⚠️ 대화 초기화 실패\n" + err;
                     chat.appendChild(errMsg);
                     scrollToBottom(wrapper);
                 } finally {
+                    setOverlay(false);
+
                     textarea.disabled = false;
                     textarea.focus();
-                    isSending = false;
+                    isResetting = false;
+
+                    // 텍스트 비어있음
                     sendBtn.disabled = true;
+                    resetChatBtn.disabled = false;
                 }
             });
 
@@ -447,7 +561,7 @@
             bindRangeNumber(repetition_penalty, repetition_penalty_num);
 
             /* =======================
-               Reset Button
+               Reset Params Button
             ======================= */
             const resetBtn = document.getElementById("resetParams");
             resetBtn.addEventListener("click", () => {
@@ -466,6 +580,7 @@
                 setOverlay(true, "하이퍼파라미터 적용중입니다…");
             });
 
+            // overlay 위에서 클릭/키보드 이벤트 먹기 (완전 잠금)
             const overlay = document.getElementById("overlay");
             overlay.addEventListener("click", (e) => e.preventDefault());
             overlay.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
@@ -517,7 +632,11 @@
 
         <!-- LEFT -->
         <div class="main">
-            <header>🦙 LLaMA3 8B Chat Playground</header>
+            <header>
+                <div class="header-title">🦙 LLaMA3 8B Chat Playground</div>
+                <!-- ✅ 대화 초기화 버튼: 전송 버튼 옆이 아니라 "헤더 우측"에 작게 배치 -->
+                <button id="resetChat" type="button" class="reset-chat-btn">Reset Chat</button>
+            </header>
 
             <div class="chat-wrapper">
                 <div class="chat">
@@ -585,8 +704,7 @@
                     <input id="repetition_penalty" type="range" min="1" max="1.5" step="0.05"
                            value="{{ params.repetition_penalty }}">
                     <input id="repetition_penalty_num" name="repetition_penalty" type="number" min="1" max="1.5"
-                           step="0.05"
-                           value="{{ params.repetition_penalty }}">
+                           step="0.05" value="{{ params.repetition_penalty }}">
                 </div>
             </div>
 
