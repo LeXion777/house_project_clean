@@ -21,8 +21,6 @@ DEFAULT_PARAMS = {
     "top_k": 50,
     "max_tokens": 512,
     "repetition_penalty": 1.1,
-    "presence_penalty": 0.0,
-    "frequency_penalty": 0.0
 }
 
 # ✅ 기본 System Prompt (원래 있던 거)

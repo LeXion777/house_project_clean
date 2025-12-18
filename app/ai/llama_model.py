@@ -129,9 +129,7 @@ def generate_chat(
         top_p=0.9,
         top_k=50,
         max_tokens=256,
-        repetition_penalty=1.1,
-        presence_penalty=0.0,
-        frequency_penalty=0.0
+        repetition_penalty=1.1
 ):
     load_model()
 
