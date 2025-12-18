@@ -36,7 +36,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            min-height: 0; /* 🔥 스크롤 핵심 */
+            min-height: 0;
         }
 
         header {
@@ -49,7 +49,7 @@
         /* Chat */
         .chat-wrapper {
             flex: 1;
-            min-height: 0;           /* 🔥 스크롤 핵심 */
+            min-height: 0;
             overflow-y: auto;
             padding: 24px;
         }
@@ -78,8 +78,28 @@
         }
 
         .msg.typing {
-            font-style: italic;
+            background: var(--assistant);
             color: var(--muted);
+            font-style: italic;
+        }
+
+        /* typing animation */
+        @keyframes dots {
+            0% { content: ""; }
+            33% { content: "."; }
+            66% { content: ".."; }
+            100% { content: "..."; }
+        }
+
+        .typing::after {
+            content: "...";
+            animation: blink 1.2s infinite steps(3);
+        }
+
+        @keyframes blink {
+            0% { content: "."; }
+            33% { content: ".."; }
+            66% { content: "..."; }
         }
 
         /* Input */
@@ -128,13 +148,9 @@
             overflow-y: auto;
         }
 
-        .settings h3 {
-            margin-top: 0;
-        }
+        .settings h3 { margin-top: 0; }
 
-        .param {
-            margin-bottom: 16px;
-        }
+        .param { margin-bottom: 16px; }
 
         .param label {
             font-size: 13px;
@@ -147,9 +163,7 @@
             align-items: center;
         }
 
-        .param-row input[type=range] {
-            flex: 1;
-        }
+        .param-row input[type=range] { flex: 1; }
 
         .param-row input[type=number] {
             width: 64px;
@@ -159,7 +173,6 @@
             border-radius: 6px;
         }
 
-        /* Button */
         .apply {
             width: 100%;
             padding: 10px;
@@ -172,25 +185,55 @@
     </style>
 
     <script>
-        function sync(id) {
-            const r = document.getElementById(id);
-            const n = document.getElementById(id + "_num");
-            r.oninput = () => n.value = r.value;
-            n.oninput = () => r.value = n.value;
-        }
-
         document.addEventListener("DOMContentLoaded", () => {
-            ["temperature", "top_p", "top_k", "max_tokens", "repetition_penalty"]
-                .forEach(sync);
-
+            const form = document.querySelector(".input-bar form");
             const textarea = document.querySelector("textarea[name='prompt']");
             const sendBtn = document.querySelector(".input-inner button");
+            const chat = document.querySelector(".chat");
+            const chatWrapper = document.querySelector(".chat-wrapper");
+
+            // 초기 비활성화
+            sendBtn.disabled = true;
 
             textarea.addEventListener("input", () => {
                 sendBtn.disabled = textarea.value.trim() === "";
             });
 
-            sendBtn.disabled = true;
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+
+                const text = textarea.value.trim();
+                if (!text) return;
+
+                // 1️⃣ 사용자 메시지 즉시 추가
+                const userMsg = document.createElement("div");
+                userMsg.className = "msg user";
+                userMsg.innerText = text;
+                chat.appendChild(userMsg);
+
+                // 2️⃣ typing indicator 추가
+                const typing = document.createElement("div");
+                typing.className = "msg assistant typing";
+                typing.innerText = "";
+                chat.appendChild(typing);
+
+                chatWrapper.scrollTop = chatWrapper.scrollHeight;
+
+                // 버튼 비활성화
+                sendBtn.disabled = true;
+                textarea.value = "";
+
+                // 3️⃣ 실제 서버 요청
+                const formData = new FormData(form);
+
+                fetch("", {
+                    method: "POST",
+                    body: formData
+                }).then(() => {
+                    // 서버 응답 후 새로고침 (Flask 세션 기반)
+                    window.location.reload();
+                });
+            });
         });
     </script>
 </head>
@@ -230,46 +273,45 @@
         <div class="param">
             <label>Temperature</label>
             <div class="param-row">
-                <input id="temperature" type="range" name="temperature" min="0.1" max="1.5" step="0.1"
+                <input type="range" name="temperature" min="0.1" max="1.5" step="0.1"
                        value="{{ params.temperature }}">
-                <input id="temperature_num" type="number" step="0.1" value="{{ params.temperature }}">
+                <input type="number" step="0.1" value="{{ params.temperature }}">
             </div>
         </div>
 
         <div class="param">
             <label>Top-p</label>
             <div class="param-row">
-                <input id="top_p" type="range" name="top_p" min="0.1" max="1" step="0.05"
+                <input type="range" name="top_p" min="0.1" max="1" step="0.05"
                        value="{{ params.top_p }}">
-                <input id="top_p_num" type="number" step="0.05" value="{{ params.top_p }}">
+                <input type="number" step="0.05" value="{{ params.top_p }}">
             </div>
         </div>
 
         <div class="param">
             <label>Top-k</label>
             <div class="param-row">
-                <input id="top_k" type="range" name="top_k" min="0" max="100" step="1"
+                <input type="range" name="top_k" min="0" max="100" step="1"
                        value="{{ params.top_k }}">
-                <input id="top_k_num" type="number" step="1" value="{{ params.top_k }}">
+                <input type="number" step="1" value="{{ params.top_k }}">
             </div>
         </div>
 
         <div class="param">
             <label>Max Tokens</label>
             <div class="param-row">
-                <input id="max_tokens" type="range" name="max_tokens" min="32" max="2048" step="32"
+                <input type="range" name="max_tokens" min="32" max="2048" step="32"
                        value="{{ params.max_tokens }}">
-                <input id="max_tokens_num" type="number" step="32" value="{{ params.max_tokens }}">
+                <input type="number" step="32" value="{{ params.max_tokens }}">
             </div>
         </div>
 
         <div class="param">
             <label>Repetition Penalty</label>
             <div class="param-row">
-                <input id="repetition_penalty" type="range" name="repetition_penalty" min="1" max="1.5" step="0.05"
+                <input type="range" name="repetition_penalty" min="1" max="1.5" step="0.05"
                        value="{{ params.repetition_penalty }}">
-                <input id="repetition_penalty_num" type="number" step="0.05"
-                       value="{{ params.repetition_penalty }}">
+                <input type="number" step="0.05" value="{{ params.repetition_penalty }}">
             </div>
         </div>
 
