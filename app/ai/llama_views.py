@@ -5,7 +5,7 @@ from .llama_model import generate_chat
 
 bp = Blueprint("llama", __name__)
 
-# ✅ 터미널에 안 찍히는 경우 대비: handler를 직접 추가
+# ✅ 터미널 로그 핸들러
 log = logging.getLogger("llama")
 if not log.handlers:
     handler = logging.StreamHandler()
@@ -14,7 +14,7 @@ if not log.handlers:
     log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-# ✅ 기본 하이퍼파라미터 (현재 generate_chat 시그니처에 맞춘 5개만 유지)
+# ✅ 디폴트 하이퍼파라미터 (generate_chat 시그니처에 맞춘 5개)
 DEFAULT_PARAMS = {
     "temperature": 0.7,
     "top_p": 0.9,
@@ -23,68 +23,99 @@ DEFAULT_PARAMS = {
     "repetition_penalty": 1.1,
 }
 
-# ✅ 기본 System Prompt
-DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant."
+# ✅ 디폴트 System Prompt (요청한 문구 그대로)
+DEFAULT_SYSTEM_PROMPT = "사용자는 한국인입니다. 특별한 지시가 없는한 한국말로 답변해야합니다."
 
-# ✅ 허용 키(세션에 남아있는 불필요 키 제거용)
-ALLOWED_PARAM_KEYS = set(DEFAULT_PARAMS.keys())
+# ✅ 입력 검증/캐스팅용 스펙
+_PARAM_SPECS = {
+    "temperature": {"type": float, "min": 0.0, "max": 2.0},
+    "top_p": {"type": float, "min": 0.0, "max": 1.0},
+    "top_k": {"type": int, "min": 0, "max": 200},
+    "max_tokens": {"type": int, "min": 1, "max": 4096},
+    "repetition_penalty": {"type": float, "min": 0.5, "max": 2.5},
+}
 
 
-def _normalize_session_params() -> None:
+def _clamp(v, vmin, vmax):
+    return vmax if v > vmax else vmin if v < vmin else v
+
+
+def _coerce_param(data: dict, key: str):
     """
-    세션 params를 '허용된 키만' 남기고,
-    누락된 키는 DEFAULT_PARAMS로 채우는 정규화 함수.
-    (과거 세션에 남아있는 presence_penalty/frequency_penalty 같은 키가
-     generate_chat에 넘어가 TypeError 나는 문제 방지)
+    data에서 key를 읽어 스펙대로 캐스팅 + 클램핑.
+    실패하면 DEFAULT_PARAMS[key]로 복귀.
     """
-    raw = session.get("params")
-    if not isinstance(raw, dict):
-        raw = {}
+    default = DEFAULT_PARAMS[key]
+    spec = _PARAM_SPECS[key]
+    raw = data.get(key, default)
 
-    normalized = {}
-    for k, default_v in DEFAULT_PARAMS.items():
-        normalized[k] = raw.get(k, default_v)
+    try:
+        if spec["type"] is int:
+            # "50.0" 같은 문자열도 들어올 수 있어 안전하게 처리
+            val = int(float(raw))
+        else:
+            val = float(raw)
+        val = _clamp(val, spec["min"], spec["max"])
+        return val
+    except Exception:
+        return default
 
-    session["params"] = normalized
+
+def _extract_request_config(data: dict):
+    """
+    JSON 요청에서 system_prompt/params를 추출.
+    - 세션에 저장하지 않음
+    - 누락/오염은 DEFAULT로 보정
+    """
+    sp = data.get("system_prompt", DEFAULT_SYSTEM_PROMPT)
+    if not isinstance(sp, str):
+        sp = DEFAULT_SYSTEM_PROMPT
+    sp = sp.strip()
+    if not sp:
+        sp = DEFAULT_SYSTEM_PROMPT
+
+    params = {k: _coerce_param(data, k) for k in DEFAULT_PARAMS.keys()}
+    return sp, params
 
 
 @bp.route("/llama", methods=["GET", "POST"])
 def llama_chat():
     # =========================
-    # 세션 초기화/정규화
+    # ✅ 세션에는 "대화내역만" 유지
     # =========================
     session.setdefault("chat_history", [])
-    session.setdefault("params", {})  # ✅ 빈 dict로 두고 매 요청 정규화로 채움
-    session.setdefault("system_prompt", DEFAULT_SYSTEM_PROMPT)
-
-    # ✅ 매 요청마다 params 정규화(과거 세션 잔존 키 제거 + 기본값 채움)
-    _normalize_session_params()
 
     # =========================
-    # ✅ JSON 요청(채팅 Send)
+    # ✅ JSON 요청: 채팅 Send (Apply된 값은 JSON에 실려옴)
     # =========================
     if request.method == "POST" and request.is_json:
         data = request.get_json(silent=True) or {}
+
+        # (예전 UI 호환) JSON으로 reset_chat을 보낸 경우도 처리
+        if data.get("action") == "reset_chat":
+            session["chat_history"] = []
+            session.modified = True
+            log.info("[RESET_CHAT:JSON] chat_history cleared")
+            return jsonify({"ok": True})
 
         user_input = (data.get("prompt") or "").strip()
         if not user_input:
             return jsonify({"answer": ""})
 
-        # (HTML fetch에서 system_prompt 제거했으면 이 블록은 없어도 됨)
-        if "system_prompt" in data and isinstance(data["system_prompt"], str):
-            session["system_prompt"] = data["system_prompt"]
+        system_prompt, params = _extract_request_config(data)
 
-        # ✅ generate 직전에 이번 요청에 사용될 값 확인
-        safe_params = {k: session["params"][k] for k in DEFAULT_PARAMS.keys()}
-        log.info("[SEND] system_prompt=%r", session.get("system_prompt"))
-        log.info("[SEND] params=%s", safe_params)
+        # ✅ generate 직전 로그(너무 길면 보기 힘드니 앞부분만)
+        sp_preview = (system_prompt[:180] + "…") if len(system_prompt) > 180 else system_prompt
+        log.info("[SEND] system_prompt=%r", sp_preview)
+        log.info("[SEND] params=%s", params)
 
+        # ✅ 대화 히스토리 누적(세션)
         session["chat_history"].append({"role": "user", "content": user_input})
 
         assistant_reply = generate_chat(
             session["chat_history"],
-            system_prompt=session["system_prompt"],
-            **safe_params
+            system_prompt=system_prompt,
+            **params
         )
 
         session["chat_history"].append({"role": "assistant", "content": assistant_reply})
@@ -92,52 +123,28 @@ def llama_chat():
         return jsonify({"answer": assistant_reply})
 
     # =========================
-    # ✅ FORM 요청(Apply / Reset Chat)
+    # ✅ FORM 요청: Reset Chat만 지원
+    # (Apply는 이제 클라이언트에서만 처리하므로 서버에서 저장/적용 X)
     # =========================
     if request.method == "POST":
         action = request.form.get("action", "")
 
-        # ✅ 대화 초기화 (새로 추가)
         if action == "reset_chat":
             session["chat_history"] = []
             session.modified = True
-            log.info("[RESET_CHAT] chat_history cleared")
+            log.info("[RESET_CHAT:FORM] chat_history cleared")
             return redirect(url_for("llama.llama_chat"))
 
-        # ✅ Apply 파라미터/시스템프롬프트
-        if action == "apply_params":
-            # ✅ DEFAULT_PARAMS 기준(허용 키만)으로 업데이트
-            for key in DEFAULT_PARAMS.keys():
-                if key in request.form:
-                    v = (request.form.get(key) or "").strip()
-                    if v == "":
-                        continue
-                    session["params"][key] = float(v) if "." in v else int(v)
-
-            # system prompt 업데이트
-            if "system_prompt" in request.form:
-                session["system_prompt"] = request.form["system_prompt"]
-
-            # ✅ Apply 직후에도 한 번 더 정규화(혹시 모를 오염 방지)
-            _normalize_session_params()
-
-            # ✅ Apply 직후 저장된 값 확인
-            log.info("[APPLY] system_prompt=%r", session.get("system_prompt"))
-            log.info("[APPLY] params=%s", session.get("params"))
-
-            session.modified = True
-            return redirect(url_for("llama.llama_chat"))
-
-        # 알 수 없는 action이 와도 화면은 정상 복귀
-        session.modified = True
+        # 알 수 없는 action이 와도 화면 복귀
         return redirect(url_for("llama.llama_chat"))
 
     # =========================
-    # GET / 화면 렌더
+    # ✅ GET: 항상 "디폴트 값"으로 렌더링
+    # (쿠키/세션에 저장된 system_prompt/params는 아예 사용하지 않음)
     # =========================
     return render_template(
         "llama/llama.html",
-        chat_history=session["chat_history"],
-        params=session["params"],
-        system_prompt=session["system_prompt"]
+        chat_history=session.get("chat_history", []),
+        params=DEFAULT_PARAMS,
+        system_prompt=DEFAULT_SYSTEM_PROMPT
     )

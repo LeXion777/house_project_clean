@@ -14,11 +14,11 @@
              ✅ MODERN "SOFT DARK" (너무 어둡지도/밝지도 않게)
              - 네비바는 그대로(아래 'predict-navbar' 섹션 수정 금지)
           ========================= */
-          --bg: #0f172a;               /* 전체 배경(딥 네이비) */
-          --bg-2: #111c2f;             /* 그라데이션 보조 */
-          --panel: rgba(17, 24, 39, 0.78);   /* 패널(유리 느낌) */
-          --panel-solid: #111827;      /* 고정 패널 */
-          --surface: rgba(255,255,255,0.06);/* 카드/버블용 표면 */
+          --bg: #0f172a;
+          --bg-2: #111c2f;
+          --panel: rgba(17, 24, 39, 0.78);
+          --panel-solid: #111827;
+          --surface: rgba(255,255,255,0.06);
           --surface-2: rgba(255,255,255,0.08);
           --border: rgba(148,163,184,0.18);
           --border-2: rgba(148,163,184,0.26);
@@ -27,31 +27,27 @@
           --text: #e5e7eb;
           --muted: #94a3b8;
 
-          /* 포인트 컬러(로고 주황 + 블루) */
           --brand: #ff6b00;
           --primary: #3b82f6;
 
-          /* 말풍선 */
           --assistant: rgba(148,163,184,0.12);
           --assistant-strong: rgba(148,163,184,0.16);
 
-          --nav-h: 70px; /* ✅ 네비 높이(요구사항) */
+          --nav-h: 70px;
         }
 
         * { box-sizing: border-box; font-family: Pretendard, sans-serif; }
-
         html, body { margin:0; padding:0; height:100%; }
 
         body{
           color: var(--text);
-          overflow: hidden; /* ✅ 페이지 스크롤 제거 */
+          overflow: hidden;
           background:
             radial-gradient(1200px 700px at 18% 0%, rgba(255,107,0,0.10), transparent 60%),
             radial-gradient(900px 600px at 85% 15%, rgba(59,130,246,0.14), transparent 55%),
             linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
         }
 
-        /* ✅ 네비+앱 전체를 한 화면에 고정 */
         .page-wrapper{
           height: 100vh;
           display: flex;
@@ -59,7 +55,6 @@
           overflow: hidden;
         }
 
-        /* ✅ 앱 영역: 네비 높이만큼 제외 */
         .app{
           height: calc(100vh - var(--nav-h));
           display: grid;
@@ -85,8 +80,6 @@
           justify-content:space-between;
           gap:12px;
           min-height: 56px;
-
-          /* ✅ 모던한 반투명 헤더 */
           background: linear-gradient(180deg, rgba(17,24,39,0.70) 0%, rgba(17,24,39,0.52) 100%);
           backdrop-filter: blur(10px);
         }
@@ -101,13 +94,11 @@
           text-overflow:ellipsis;
           letter-spacing: -0.2px;
         }
-
         .header-title::before{
           content:"🦙";
           opacity: 0.95;
         }
 
-        /* ✅ 대화 초기화 버튼: 위험도 낮게(작게/헤더 우측/차분한 경고톤) */
         .reset-chat-btn{
           padding: 8px 12px;
           border-radius: 999px;
@@ -259,6 +250,107 @@
           letter-spacing: -0.3px;
         }
 
+        /* ✅ Applied 현황판 */
+        .applied-card{
+          border: 1px solid var(--border);
+          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
+          border-radius: 16px;
+          padding: 12px 12px;
+          box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+          margin-bottom: 14px;
+        }
+
+        .applied-head{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:10px;
+          margin-bottom: 8px;
+        }
+
+        .applied-title{
+          font-weight: 950;
+          letter-spacing: -0.2px;
+          display:flex;
+          align-items:center;
+          gap:8px;
+        }
+
+        .pill{
+          font-size: 12px;
+          font-weight: 900;
+          padding: 5px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(59,130,246,0.30);
+          background: rgba(59,130,246,0.10);
+          color: #bfdbfe;
+          white-space: nowrap;
+        }
+
+        .applied-meta{
+          font-size: 12px;
+          color: var(--muted);
+          font-weight: 700;
+          white-space: nowrap;
+        }
+
+        .applied-grid{
+          display:grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px 10px;
+          margin-top: 10px;
+        }
+
+        .kv{
+          border: 1px solid rgba(148,163,184,0.14);
+          background: rgba(15,23,42,0.35);
+          border-radius: 12px;
+          padding: 10px 10px;
+        }
+
+        .k{
+          font-size: 12px;
+          color: var(--muted);
+          font-weight: 800;
+          margin-bottom: 3px;
+        }
+        .v{
+          font-size: 13px;
+          font-weight: 950;
+          letter-spacing: -0.2px;
+        }
+
+        /* ✅ System Prompt Applied: 2줄 말줄임 */
+        .applied-prompt{
+          margin-top: 8px;
+          border: 1px solid rgba(255,107,0,0.22);
+          background: rgba(255,107,0,0.06);
+          border-radius: 14px;
+          padding: 10px 10px;
+        }
+        .applied-prompt .k{
+          color: rgba(255,220,200,0.85);
+        }
+        .applied-prompt .v{
+          font-weight: 850;
+          color: var(--text);
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.35;
+          max-height: calc(1.35em * 2);
+          word-break: break-word;
+        }
+
+        .hint{
+          margin-top: 8px;
+          font-size: 12px;
+          color: rgba(148,163,184,0.92);
+          font-weight: 700;
+        }
+
         .settings textarea[name="system_prompt"]{
           width: 100%;
           background: rgba(15,23,42,0.55) !important;
@@ -289,7 +381,6 @@
           align-items:center;
         }
 
-        /* ✅ range 모던 스타일 */
         .param-row input[type=range]{
           flex:1;
           accent-color: var(--primary);
@@ -310,7 +401,6 @@
           background: rgba(15,23,42,0.68);
         }
 
-        /* ✅ Reset to Default 버튼: inline style 있어도 덮어쓰기 */
         #resetParams{
           width: 100% !important;
           padding: 12px 10px !important;
@@ -328,7 +418,6 @@
           transform: translateY(-1px);
         }
 
-        /* ✅ Apply 버튼: 브랜드(주황) 사용 */
         .apply{
           width: 100%;
           padding: 12px 10px;
@@ -345,7 +434,7 @@
         .apply:hover{ filter: brightness(1.03); transform: translateY(-1px); }
         .apply:active{ transform: translateY(0px); }
 
-        /* ===== OVERLAY (Apply/Reset 중 잠금) ===== */
+        /* ===== OVERLAY ===== */
         .overlay{
           position: fixed;
           inset: 0;
@@ -406,7 +495,6 @@
           filter: brightness(200%);
         }
 
-        /* ✅ 스크롤바(모던 다크) */
         .chat-wrapper::-webkit-scrollbar,
         .settings::-webkit-scrollbar { width: 10px; }
 
@@ -422,7 +510,6 @@
           background: rgba(0,0,0,0);
         }
 
-        /* ✅ 작은 화면 대응 */
         @media (max-width: 992px){
           .app{ grid-template-columns: 1fr; }
           .settings{ display:none; }
@@ -441,16 +528,10 @@
           repetition_penalty: 1.1
         };
 
-        /* =========================================================
-           Utility
-        ========================================================= */
         function scrollToBottom(wrapper) {
-          requestAnimationFrame(() => {
-            wrapper.scrollTop = wrapper.scrollHeight;
-          });
+          requestAnimationFrame(() => { wrapper.scrollTop = wrapper.scrollHeight; });
         }
 
-        // range <-> number 동기화 (양방향 + clamp)
         function bindRangeNumber(rangeEl, numberEl) {
           if (!rangeEl || !numberEl) return;
 
@@ -466,10 +547,7 @@
             return Number(snapped.toFixed(decimals));
           };
 
-          const syncFromRange = () => {
-            numberEl.value = rangeEl.value;
-          };
-
+          const syncFromRange = () => { numberEl.value = rangeEl.value; };
           const syncFromNumber = () => {
             const v = clampToStep(Number(numberEl.value));
             rangeEl.value = String(v);
@@ -488,7 +566,6 @@
           syncFromRange();
         }
 
-        // overlay 표시/숨김 + 전체 UI 잠금
         function setOverlay(show, text) {
           const overlay = document.getElementById("overlay");
           const box = document.getElementById("overlayText");
@@ -505,15 +582,23 @@
           }
         }
 
-        // 파라미터 값 세팅 (range + number 동시에)
         function setParam(id, value) {
           const range = document.getElementById(id);
           const num = document.getElementById(id + "_num");
           if (!range || !num) return;
-
           range.value = value;
           num.value = value;
           range.dispatchEvent(new Event("input"));
+        }
+
+        function nowStamp() {
+          const d = new Date();
+          const yy = String(d.getFullYear()).slice(2);
+          const mm = String(d.getMonth()+1).padStart(2,"0");
+          const dd = String(d.getDate()).padStart(2,"0");
+          const hh = String(d.getHours()).padStart(2,"0");
+          const mi = String(d.getMinutes()).padStart(2,"0");
+          return `${yy}.${mm}.${dd} ${hh}:${mi}`;
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -528,6 +613,8 @@
           const chat = document.querySelector(".chat");
           const wrapper = document.querySelector(".chat-wrapper");
 
+          const systemPromptInput = document.getElementById("system_prompt_input");
+
           const temperature = document.getElementById("temperature");
           const temperature_num = document.getElementById("temperature_num");
           const top_p = document.getElementById("top_p");
@@ -539,7 +626,47 @@
           const repetition_penalty = document.getElementById("repetition_penalty");
           const repetition_penalty_num = document.getElementById("repetition_penalty_num");
 
+          const applyBtn = document.getElementById("applyBtn");
+          const appliedAtEl = document.getElementById("appliedAt");
+          const appliedPromptEl = document.getElementById("appliedPromptText");
+
+          const appliedTemperatureEl = document.getElementById("applied_temperature");
+          const appliedTopPEl = document.getElementById("applied_top_p");
+          const appliedTopKEl = document.getElementById("applied_top_k");
+          const appliedMaxTokensEl = document.getElementById("applied_max_tokens");
+          const appliedRepEl = document.getElementById("applied_repetition_penalty");
+
           scrollToBottom(wrapper);
+
+          /* =======================
+             Client-side applied state
+             (✅ 세션/쿠키 저장 없이 "현재 적용값"만 관리)
+          ======================= */
+          let applied = {
+            system_prompt: (systemPromptInput.value || "").trim(),
+            temperature: Number(temperature.value),
+            top_p: Number(top_p.value),
+            top_k: Number(top_k.value),
+            max_tokens: Number(max_tokens.value),
+            repetition_penalty: Number(repetition_penalty.value),
+            applied_at: "기본값"
+          };
+
+          function updateAppliedBoard() {
+            appliedAtEl.textContent = applied.applied_at;
+
+            const sp = (applied.system_prompt || "").trim();
+            appliedPromptEl.textContent = sp.length ? sp : "(비어있음)";
+
+            appliedTemperatureEl.textContent = String(applied.temperature);
+            appliedTopPEl.textContent = String(applied.top_p);
+            appliedTopKEl.textContent = String(applied.top_k);
+            appliedMaxTokensEl.textContent = String(applied.max_tokens);
+            appliedRepEl.textContent = String(applied.repetition_penalty);
+          }
+
+          // 최초 1회: 현재 화면 값 = 기본값 → 현황판 반영
+          updateAppliedBoard();
 
           /* =======================
              Send enable/disable
@@ -557,7 +684,53 @@
           });
 
           /* =======================
+             Hyper Parameter Sync
+          ======================= */
+          bindRangeNumber(temperature, temperature_num);
+          bindRangeNumber(top_p, top_p_num);
+          bindRangeNumber(top_k, top_k_num);
+          bindRangeNumber(max_tokens, max_tokens_num);
+          bindRangeNumber(repetition_penalty, repetition_penalty_num);
+
+          /* =======================
+             Reset Params (입력값만 초기화 / 적용은 Apply를 눌러야 반영)
+          ======================= */
+          const resetParamsBtn = document.getElementById("resetParams");
+          resetParamsBtn.addEventListener("click", () => {
+            setParam("temperature", DEFAULT_PRESET.temperature);
+            setParam("top_p", DEFAULT_PRESET.top_p);
+            setParam("top_k", DEFAULT_PRESET.top_k);
+            setParam("max_tokens", DEFAULT_PRESET.max_tokens);
+            setParam("repetition_penalty", DEFAULT_PRESET.repetition_penalty);
+          });
+
+          /* =======================
+             ✅ Apply Settings (서버/세션 저장 X)
+             - "현재 적용값(applied)"만 갱신 + 현황판 업데이트
+          ======================= */
+          applyBtn.addEventListener("click", () => {
+            setOverlay(true, "프롬프트&하이퍼파라미터 적용중입니다…");
+
+            // 아주 짧게만 잠금(UX용). 실제로 서버 저장을 안 하니 즉시 반영.
+            requestAnimationFrame(() => {
+              applied = {
+                system_prompt: (systemPromptInput.value || "").trim(),
+                temperature: Number(temperature.value),
+                top_p: Number(top_p.value),
+                top_k: Number(top_k.value),
+                max_tokens: Number(max_tokens.value),
+                repetition_penalty: Number(repetition_penalty.value),
+                applied_at: nowStamp()
+              };
+
+              updateAppliedBoard();
+              setOverlay(false);
+            });
+          });
+
+          /* =======================
              Chat Send (JSON)
+             ✅ 적용된(applied) 값을 매 요청마다 같이 전송
           ======================= */
           let isSending = false;
           let isResetting = false;
@@ -570,13 +743,11 @@
 
             isSending = true;
 
-            // 사용자 메시지 즉시 추가
             const userMsg = document.createElement("div");
             userMsg.className = "msg user";
             userMsg.innerText = text;
             chat.appendChild(userMsg);
 
-            // typing 추가
             const typing = document.createElement("div");
             typing.className = "msg assistant typing";
             typing.innerText = "";
@@ -584,25 +755,32 @@
 
             scrollToBottom(wrapper);
 
-            // 입력 잠금
             textarea.value = "";
             textarea.disabled = true;
             sendBtn.disabled = true;
             resetChatBtn.disabled = true;
 
             try {
+              const payload = {
+                prompt: text,
+                system_prompt: applied.system_prompt,
+                temperature: applied.temperature,
+                top_p: applied.top_p,
+                top_k: applied.top_k,
+                max_tokens: applied.max_tokens,
+                repetition_penalty: applied.repetition_penalty
+              };
+
               const res = await fetch("/llama", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ prompt: text })
+                body: JSON.stringify(payload)
               });
 
               if (!res.ok) throw new Error("HTTP " + res.status);
 
               const ct = res.headers.get("content-type") || "";
-              if (!ct.includes("application/json")) {
-                throw new Error("Invalid response type");
-              }
+              if (!ct.includes("application/json")) throw new Error("Invalid response type");
 
               const data = await res.json();
 
@@ -614,7 +792,6 @@
               chat.appendChild(botMsg);
 
               scrollToBottom(wrapper);
-
             } catch (err) {
               typing.remove();
 
@@ -629,15 +806,13 @@
               textarea.focus();
               isSending = false;
 
-              sendBtn.disabled = true;       // 텍스트 비어있음
-              resetChatBtn.disabled = false; // 다시 활성화
+              sendBtn.disabled = true;
+              resetChatBtn.disabled = false;
             }
           });
 
           /* =======================
-             ✅ Chat Reset (FORM)
-             - 서버가 redirect/HTML로 응답해도 실패하지 않게
-             - confirm + overlay
+             Chat Reset (FORM)
           ======================= */
           resetChatBtn.addEventListener("click", () => {
             if (isSending || isResetting) return;
@@ -652,42 +827,11 @@
             resetChatBtn.disabled = true;
 
             setOverlay(true, "대화 초기화중입니다…");
-
-            // ✅ JSON fetch 대신 FORM submit (서버 redirect 구조와 100% 호환)
             resetChatForm.submit();
           });
 
           /* =======================
-             Hyper Parameter Sync
-          ======================= */
-          bindRangeNumber(temperature, temperature_num);
-          bindRangeNumber(top_p, top_p_num);
-          bindRangeNumber(top_k, top_k_num);
-          bindRangeNumber(max_tokens, max_tokens_num);
-          bindRangeNumber(repetition_penalty, repetition_penalty_num);
-
-          /* =======================
-             Reset Params Button
-          ======================= */
-          const resetParamsBtn = document.getElementById("resetParams");
-          resetParamsBtn.addEventListener("click", () => {
-            setParam("temperature", DEFAULT_PRESET.temperature);
-            setParam("top_p", DEFAULT_PRESET.top_p);
-            setParam("top_k", DEFAULT_PRESET.top_k);
-            setParam("max_tokens", DEFAULT_PRESET.max_tokens);
-            setParam("repetition_penalty", DEFAULT_PRESET.repetition_penalty);
-          });
-
-          /* =======================
-             Apply Params Overlay
-          ======================= */
-          const paramForm = document.getElementById("paramForm");
-          paramForm.addEventListener("submit", () => {
-            setOverlay(true, "프롬프트&하이퍼파라미터 적용중입니다…");
-          });
-
-          /* =======================
-             overlay 위에서 이벤트 먹기 (완전 잠금)
+             overlay 잠금
           ======================= */
           const overlay = document.getElementById("overlay");
           overlay.addEventListener("click", (e) => e.preventDefault());
@@ -695,6 +839,15 @@
           document.addEventListener("keydown", (e) => {
             if (overlay.style.display === "flex") e.preventDefault();
           }, { capture: true });
+
+          /* =======================
+             ✅ paramForm submit 방지
+             (Enter로 submit되는 사고 방지)
+          ======================= */
+          const paramForm = document.getElementById("paramForm");
+          paramForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+          });
         });
     </script>
 </head>
@@ -722,25 +875,19 @@
 
             <div class="collapse navbar-collapse" id="topNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item ms-3">
-                        <a class="nav-link" href="{{ url_for('predict.predict_search') }}">전월세 예측</a>
-                    </li>
-                    <li class="nav-item ms-3">
-                        <a class="nav-link" href="{{ url_for('support.support_search') }}">정부지원</a>
-                    </li>
-                    <li class="nav-item ms-3">
-                        <a class="nav-link" href="{{ url_for('login.login') }}">로그인</a>
-                    </li>
-                    <li class="nav-item ms-3">
-                        <a class="nav-link" href="{{ url_for('login.signup') }}">회원가입</a>
-                    </li>
+                    <li class="nav-item ms-3"><a class="nav-link" href="{{ url_for('predict.predict_search') }}">전월세
+                        예측</a></li>
+                    <li class="nav-item ms-3"><a class="nav-link"
+                                                 href="{{ url_for('support.support_search') }}">정부지원</a></li>
+                    <li class="nav-item ms-3"><a class="nav-link" href="{{ url_for('login.login') }}">로그인</a></li>
+                    <li class="nav-item ms-3"><a class="nav-link" href="{{ url_for('login.signup') }}">회원가입</a></li>
                 </ul>
             </div>
 
         </div>
     </nav>
 
-    <!-- ✅ llama 앱 (기능/구조 그대로) -->
+    <!-- ✅ llama 앱 -->
     <div class="app">
 
         <!-- LEFT -->
@@ -748,10 +895,8 @@
             <header>
                 <div class="header-title">LLaMA3 8B Chat</div>
 
-                <!-- ✅ 대화 초기화 버튼: 헤더 우측에 작게 배치 -->
                 <button id="resetChat" type="button" class="reset-chat-btn">Reset Chat</button>
 
-                <!-- ✅ reset은 서버가 redirect로 처리하는 구조에 맞춰 FORM으로 제출 -->
                 <form id="resetChatForm" method="post" style="display:none;">
                     <input type="hidden" name="action" value="reset_chat">
                 </form>
@@ -774,9 +919,51 @@
         </div>
 
         <!-- RIGHT -->
-        <form id="paramForm" method="post" class="settings">
+        <form id="paramForm" class="settings" autocomplete="off">
+            <!-- ✅ Applied 현황판 -->
+            <div class="applied-card">
+                <div class="applied-head">
+                    <div class="applied-title">
+                        Applied Status
+                        <span class="pill">ACTIVE</span>
+                    </div>
+                    <div class="applied-meta">Last: <span id="appliedAt">-</span></div>
+                </div>
+
+                <div class="applied-prompt">
+                    <div class="k">System Prompt (Applied)</div>
+                    <div class="v" id="appliedPromptText">(비어있음)</div>
+                </div>
+
+                <div class="applied-grid">
+                    <div class="kv">
+                        <div class="k">Temperature</div>
+                        <div class="v" id="applied_temperature">-</div>
+                    </div>
+                    <div class="kv">
+                        <div class="k">Top-p</div>
+                        <div class="v" id="applied_top_p">-</div>
+                    </div>
+                    <div class="kv">
+                        <div class="k">Top-k</div>
+                        <div class="v" id="applied_top_k">-</div>
+                    </div>
+                    <div class="kv">
+                        <div class="k">Max Tokens</div>
+                        <div class="v" id="applied_max_tokens">-</div>
+                    </div>
+                    <div class="kv" style="grid-column: 1 / -1;">
+                        <div class="k">Repetition Penalty</div>
+                        <div class="v" id="applied_repetition_penalty">-</div>
+                    </div>
+                </div>
+
+                <div class="hint">※ Send 요청에는 항상 “Applied Status” 값이 포함되어 전송됩니다.</div>
+            </div>
+
+            <!-- ✅ 입력 영역(기존) -->
             <h3>System Prompt</h3>
-            <textarea name="system_prompt" rows="4">{{ system_prompt }}</textarea>
+            <textarea id="system_prompt_input" name="system_prompt" rows="4">{{ system_prompt }}</textarea>
 
             <h3 style="margin-top:16px;">Hyper Parameters</h3>
 
@@ -827,9 +1014,6 @@
                 </div>
             </div>
 
-            <input type="hidden" name="action" value="apply_params">
-
-            <!-- (기존 inline style이 있어도 CSS에서 #resetParams로 덮어씀) -->
             <button type="button" id="resetParams"
                     style="width:100%; padding:10px; border-radius:8px;
                        border:1px solid #1e293b; background:#334155;
@@ -837,7 +1021,8 @@
                 Reset to Default
             </button>
 
-            <button class="apply" type="submit">Apply Settings</button>
+            <!-- ✅ Apply는 submit이 아니라 "클라이언트 적용" 버튼 -->
+            <button id="applyBtn" class="apply" type="button">Apply Settings</button>
         </form>
 
     </div>
