@@ -33,7 +33,7 @@
           --assistant: rgba(148,163,184,0.12);
           --assistant-strong: rgba(148,163,184,0.16);
 
-          --nav-h: 70px;
+          --nav-h: 70px; /* ✅ 네비 높이 */
         }
 
         * { box-sizing: border-box; font-family: Pretendard, sans-serif; }
@@ -94,6 +94,7 @@
           text-overflow:ellipsis;
           letter-spacing: -0.2px;
         }
+
         .header-title::before{
           content:"🦙";
           opacity: 0.95;
@@ -178,7 +179,6 @@
           66% { content: "..."; }
         }
 
-        /* ===== Input ===== */
         .input-bar{
           border-top: 1px solid var(--border);
           padding: 14px 18px;
@@ -250,105 +250,90 @@
           letter-spacing: -0.3px;
         }
 
-        /* ✅ Applied 현황판 */
-        .applied-card{
+        /* ✅ 현황판 */
+        .status-card{
+          background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
           border: 1px solid var(--border);
-          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
           border-radius: 16px;
-          padding: 12px 12px;
+          padding: 14px 14px 12px;
           box-shadow: 0 12px 28px rgba(0,0,0,0.18);
           margin-bottom: 14px;
         }
-
-        .applied-head{
+        .status-top{
           display:flex;
           align-items:center;
           justify-content:space-between;
           gap:10px;
-          margin-bottom: 8px;
+          margin-bottom: 10px;
         }
-
-        .applied-title{
+        .status-title{
           font-weight: 950;
           letter-spacing: -0.2px;
           display:flex;
           align-items:center;
           gap:8px;
         }
-
-        .pill{
+        .status-badge{
           font-size: 12px;
           font-weight: 900;
-          padding: 5px 10px;
+          padding: 6px 10px;
           border-radius: 999px;
-          border: 1px solid rgba(59,130,246,0.30);
-          background: rgba(59,130,246,0.10);
-          color: #bfdbfe;
+          border: 1px solid rgba(255,107,0,0.30);
+          background: rgba(255,107,0,0.10);
+          color: #ffd7bf;
           white-space: nowrap;
         }
-
-        .applied-meta{
-          font-size: 12px;
-          color: var(--muted);
-          font-weight: 700;
-          white-space: nowrap;
+        .status-row{
+          display:flex;
+          gap:10px;
+          align-items:flex-start;
+          margin-top: 8px;
         }
-
-        .applied-grid{
-          display:grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 8px 10px;
-          margin-top: 10px;
-        }
-
-        .kv{
-          border: 1px solid rgba(148,163,184,0.14);
-          background: rgba(15,23,42,0.35);
-          border-radius: 12px;
-          padding: 10px 10px;
-        }
-
-        .k{
-          font-size: 12px;
+        .status-label{
+          width: 110px;
+          flex: 0 0 110px;
           color: var(--muted);
           font-weight: 800;
-          margin-bottom: 3px;
+          font-size: 12px;
+          padding-top: 2px;
         }
-        .v{
+        .status-value{
+          flex: 1;
+          min-width: 0;
           font-size: 13px;
-          font-weight: 950;
-          letter-spacing: -0.2px;
+          font-weight: 800;
+          color: var(--text);
         }
-
-        /* ✅ System Prompt Applied: 2줄 말줄임 */
-        .applied-prompt{
-          margin-top: 8px;
-          border: 1px solid rgba(255,107,0,0.22);
-          background: rgba(255,107,0,0.06);
+        .status-ellipsis{
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          display:block;
+          max-width: 100%;
+        }
+        .status-grid{
+          display:grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          margin-top: 10px;
+        }
+        .kv{
+          background: rgba(15,23,42,0.40);
+          border: 1px solid var(--border);
           border-radius: 14px;
           padding: 10px 10px;
         }
-        .applied-prompt .k{
-          color: rgba(255,220,200,0.85);
-        }
-        .applied-prompt .v{
-          font-weight: 850;
-          color: var(--text);
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          line-height: 1.35;
-          max-height: calc(1.35em * 2);
-          word-break: break-word;
-        }
-
-        .hint{
-          margin-top: 8px;
+        .kv .k{
           font-size: 12px;
-          color: rgba(148,163,184,0.92);
-          font-weight: 700;
+          font-weight: 900;
+          color: var(--muted);
+          margin-bottom: 2px;
+        }
+        .kv .v{
+          font-size: 14px;
+          font-weight: 950;
+          color: var(--text);
+          letter-spacing: -0.1px;
         }
 
         .settings textarea[name="system_prompt"]{
@@ -434,7 +419,6 @@
         .apply:hover{ filter: brightness(1.03); transform: translateY(-1px); }
         .apply:active{ transform: translateY(0px); }
 
-        /* ===== OVERLAY ===== */
         .overlay{
           position: fixed;
           inset: 0;
@@ -517,16 +501,39 @@
     </style>
 
     <script>
-        /* =========================================================
-           DEFAULT PRESET (초기값)
-        ========================================================= */
-        const DEFAULT_PRESET = {
-          temperature: 0.7,
-          top_p: 0.9,
-          top_k: 50,
-          max_tokens: 512,
-          repetition_penalty: 1.1
+        // ✅ 서버가 주는 "디폴트" (페이지 열 때마다 이것으로 시작)
+        const DEFAULT_PRESET = {{ default_params|tojson }};
+        const DEFAULT_SYSTEM_PROMPT = {{ default_system_prompt|tojson }};
+
+        // ✅ 클라에서만 유지되는 "현재 적용중" 값(쿠키/세션 저장 X)
+        let appliedSystemPrompt = DEFAULT_SYSTEM_PROMPT;
+        let appliedParams = { ...DEFAULT_PRESET };
+
+        const PARAM_SPECS = {
+          temperature: {type: "float", min: 0.0, max: 2.0},
+          top_p: {type: "float", min: 0.0, max: 1.0},
+          top_k: {type: "int", min: 0, max: 200},
+          max_tokens: {type: "int", min: 1, max: 4096},
+          repetition_penalty: {type: "float", min: 0.5, max: 2.5},
         };
+
+        function clamp(v, mn, mx){ return v > mx ? mx : (v < mn ? mn : v); }
+
+        function coerceInput(key, raw){
+          const spec = PARAM_SPECS[key];
+          try{
+            let v;
+            if(spec.type === "int") v = parseInt(String(raw), 10);
+            else v = parseFloat(String(raw));
+            if(Number.isNaN(v)) throw new Error("NaN");
+            v = clamp(v, spec.min, spec.max);
+            // int 보장
+            if(spec.type === "int") v = Math.trunc(v);
+            return v;
+          }catch(e){
+            return DEFAULT_PRESET[key];
+          }
+        }
 
         function scrollToBottom(wrapper) {
           requestAnimationFrame(() => { wrapper.scrollTop = wrapper.scrollHeight; });
@@ -569,7 +576,6 @@
         function setOverlay(show, text) {
           const overlay = document.getElementById("overlay");
           const box = document.getElementById("overlayText");
-
           if (text) box.textContent = text;
           overlay.style.display = show ? "flex" : "none";
 
@@ -591,20 +597,55 @@
           range.dispatchEvent(new Event("input"));
         }
 
-        function nowStamp() {
-          const d = new Date();
-          const yy = String(d.getFullYear()).slice(2);
-          const mm = String(d.getMonth()+1).padStart(2,"0");
-          const dd = String(d.getDate()).padStart(2,"0");
-          const hh = String(d.getHours()).padStart(2,"0");
-          const mi = String(d.getMinutes()).padStart(2,"0");
-          return `${yy}.${mm}.${dd} ${hh}:${mi}`;
+        function promptPreview(text, n=140){
+          const t = (text || "").replace(/\s+/g, " ").trim();
+          if(!t) return "(비어있음)";
+          return t.length > n ? (t.slice(0, n) + "…") : t;
+        }
+
+        function renderAppliedPanel(){
+          // badge
+          const badge = document.getElementById("appliedBadge");
+          if (badge) badge.textContent = "적용됨";
+
+          // system prompt preview
+          const sp = document.getElementById("appliedPrompt");
+          if (sp) sp.textContent = promptPreview(appliedSystemPrompt, 160);
+
+          // params
+          const setKV = (id, v) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(v);
+          };
+          setKV("applied_temperature", appliedParams.temperature);
+          setKV("applied_top_p", appliedParams.top_p);
+          setKV("applied_top_k", appliedParams.top_k);
+          setKV("applied_max_tokens", appliedParams.max_tokens);
+          setKV("applied_repetition_penalty", appliedParams.repetition_penalty);
+        }
+
+        function readInputsToConfig(){
+          const spInput = document.getElementById("systemPromptInput");
+          const spRaw = spInput ? spInput.value : "";
+          const sp = (spRaw || "").trim() || DEFAULT_SYSTEM_PROMPT;
+
+          const getNum = (id) => {
+            const el = document.getElementById(id);
+            return el ? el.value : "";
+          };
+
+          const params = {
+            temperature: coerceInput("temperature", getNum("temperature_num")),
+            top_p: coerceInput("top_p", getNum("top_p_num")),
+            top_k: coerceInput("top_k", getNum("top_k_num")),
+            max_tokens: coerceInput("max_tokens", getNum("max_tokens_num")),
+            repetition_penalty: coerceInput("repetition_penalty", getNum("repetition_penalty_num")),
+          };
+
+          return { system_prompt: sp, params };
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-          /* =======================
-             Elements
-          ======================= */
           const textarea = document.getElementById("prompt");
           const sendBtn = document.getElementById("send");
           const resetChatBtn = document.getElementById("resetChat");
@@ -613,7 +654,7 @@
           const chat = document.querySelector(".chat");
           const wrapper = document.querySelector(".chat-wrapper");
 
-          const systemPromptInput = document.getElementById("system_prompt_input");
+          const systemPromptInput = document.getElementById("systemPromptInput");
 
           const temperature = document.getElementById("temperature");
           const temperature_num = document.getElementById("temperature_num");
@@ -626,51 +667,13 @@
           const repetition_penalty = document.getElementById("repetition_penalty");
           const repetition_penalty_num = document.getElementById("repetition_penalty_num");
 
-          const applyBtn = document.getElementById("applyBtn");
-          const appliedAtEl = document.getElementById("appliedAt");
-          const appliedPromptEl = document.getElementById("appliedPromptText");
-
-          const appliedTemperatureEl = document.getElementById("applied_temperature");
-          const appliedTopPEl = document.getElementById("applied_top_p");
-          const appliedTopKEl = document.getElementById("applied_top_k");
-          const appliedMaxTokensEl = document.getElementById("applied_max_tokens");
-          const appliedRepEl = document.getElementById("applied_repetition_penalty");
-
+          // 초기 "적용중"은 디폴트
+          appliedSystemPrompt = DEFAULT_SYSTEM_PROMPT;
+          appliedParams = { ...DEFAULT_PRESET };
+          renderAppliedPanel();
           scrollToBottom(wrapper);
 
-          /* =======================
-             Client-side applied state
-             (✅ 세션/쿠키 저장 없이 "현재 적용값"만 관리)
-          ======================= */
-          let applied = {
-            system_prompt: (systemPromptInput.value || "").trim(),
-            temperature: Number(temperature.value),
-            top_p: Number(top_p.value),
-            top_k: Number(top_k.value),
-            max_tokens: Number(max_tokens.value),
-            repetition_penalty: Number(repetition_penalty.value),
-            applied_at: "기본값"
-          };
-
-          function updateAppliedBoard() {
-            appliedAtEl.textContent = applied.applied_at;
-
-            const sp = (applied.system_prompt || "").trim();
-            appliedPromptEl.textContent = sp.length ? sp : "(비어있음)";
-
-            appliedTemperatureEl.textContent = String(applied.temperature);
-            appliedTopPEl.textContent = String(applied.top_p);
-            appliedTopKEl.textContent = String(applied.top_k);
-            appliedMaxTokensEl.textContent = String(applied.max_tokens);
-            appliedRepEl.textContent = String(applied.repetition_penalty);
-          }
-
-          // 최초 1회: 현재 화면 값 = 기본값 → 현황판 반영
-          updateAppliedBoard();
-
-          /* =======================
-             Send enable/disable
-          ======================= */
+          // Send enable/disable
           sendBtn.disabled = true;
           textarea.addEventListener("input", () => {
             sendBtn.disabled = textarea.value.trim() === "";
@@ -683,63 +686,10 @@
             }
           });
 
-          /* =======================
-             Hyper Parameter Sync
-          ======================= */
-          bindRangeNumber(temperature, temperature_num);
-          bindRangeNumber(top_p, top_p_num);
-          bindRangeNumber(top_k, top_k_num);
-          bindRangeNumber(max_tokens, max_tokens_num);
-          bindRangeNumber(repetition_penalty, repetition_penalty_num);
-
-          /* =======================
-             Reset Params (입력값만 초기화 / 적용은 Apply를 눌러야 반영)
-          ======================= */
-          const DEFAULT_SYSTEM_PROMPT = {{ default_system_prompt|tojson }};
-          const resetParamsBtn = document.getElementById("resetParams");
-          const systemPromptInput = document.getElementById("systemPromptInput");
-
-          resetParamsBtn.addEventListener("click", () => {
-            setParam("temperature", DEFAULT_PRESET.temperature);
-            setParam("top_p", DEFAULT_PRESET.top_p);
-            setParam("top_k", DEFAULT_PRESET.top_k);
-            setParam("max_tokens", DEFAULT_PRESET.max_tokens);
-            setParam("repetition_penalty", DEFAULT_PRESET.repetition_penalty);
-
-            if (systemPromptInput) systemPromptInput.value = DEFAULT_SYSTEM_PROMPT;
-          });
-
-          /* =======================
-             ✅ Apply Settings (서버/세션 저장 X)
-             - "현재 적용값(applied)"만 갱신 + 현황판 업데이트
-          ======================= */
-          applyBtn.addEventListener("click", () => {
-            setOverlay(true, "프롬프트&하이퍼파라미터 적용중입니다…");
-
-            // 아주 짧게만 잠금(UX용). 실제로 서버 저장을 안 하니 즉시 반영.
-            requestAnimationFrame(() => {
-              applied = {
-                system_prompt: (systemPromptInput.value || "").trim(),
-                temperature: Number(temperature.value),
-                top_p: Number(top_p.value),
-                top_k: Number(top_k.value),
-                max_tokens: Number(max_tokens.value),
-                repetition_penalty: Number(repetition_penalty.value),
-                applied_at: nowStamp()
-              };
-
-              updateAppliedBoard();
-              setOverlay(false);
-            });
-          });
-
-          /* =======================
-             Chat Send (JSON)
-             ✅ 적용된(applied) 값을 매 요청마다 같이 전송
-          ======================= */
           let isSending = false;
           let isResetting = false;
 
+          // ✅ Send (항상 "현재 적용중" 값을 JSON에 포함해서 전송)
           sendBtn.addEventListener("click", async () => {
             if (isSending || isResetting) return;
 
@@ -766,26 +716,22 @@
             resetChatBtn.disabled = true;
 
             try {
-              const payload = {
-                prompt: text,
-                system_prompt: applied.system_prompt,
-                temperature: applied.temperature,
-                top_p: applied.top_p,
-                top_k: applied.top_k,
-                max_tokens: applied.max_tokens,
-                repetition_penalty: applied.repetition_penalty
-              };
-
               const res = await fetch("/llama", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                  prompt: text,
+                  system_prompt: appliedSystemPrompt,
+                  ...appliedParams
+                })
               });
 
               if (!res.ok) throw new Error("HTTP " + res.status);
 
               const ct = res.headers.get("content-type") || "";
-              if (!ct.includes("application/json")) throw new Error("Invalid response type");
+              if (!ct.includes("application/json")) {
+                throw new Error("Invalid response type");
+              }
 
               const data = await res.json();
 
@@ -797,6 +743,7 @@
               chat.appendChild(botMsg);
 
               scrollToBottom(wrapper);
+
             } catch (err) {
               typing.remove();
 
@@ -816,9 +763,7 @@
             }
           });
 
-          /* =======================
-             Chat Reset (FORM)
-          ======================= */
+          // ✅ Reset Chat (서버 FORM 리셋 + GET 재로드 → 디폴트로 복귀)
           resetChatBtn.addEventListener("click", () => {
             if (isSending || isResetting) return;
 
@@ -832,27 +777,53 @@
             resetChatBtn.disabled = true;
 
             setOverlay(true, "대화 초기화중입니다…");
+
             resetChatForm.submit();
           });
 
-          /* =======================
-             overlay 잠금
-          ======================= */
+          // Hyper Parameter Sync
+          bindRangeNumber(temperature, temperature_num);
+          bindRangeNumber(top_p, top_p_num);
+          bindRangeNumber(top_k, top_k_num);
+          bindRangeNumber(max_tokens, max_tokens_num);
+          bindRangeNumber(repetition_penalty, repetition_penalty_num);
+
+          // ✅ Reset Params: "입력값만" 디폴트로 + system prompt 입력도 디폴트로 (적용은 Apply)
+          const resetParamsBtn = document.getElementById("resetParams");
+          resetParamsBtn.addEventListener("click", () => {
+            setParam("temperature", DEFAULT_PRESET.temperature);
+            setParam("top_p", DEFAULT_PRESET.top_p);
+            setParam("top_k", DEFAULT_PRESET.top_k);
+            setParam("max_tokens", DEFAULT_PRESET.max_tokens);
+            setParam("repetition_penalty", DEFAULT_PRESET.repetition_penalty);
+
+            if (systemPromptInput) systemPromptInput.value = DEFAULT_SYSTEM_PROMPT;
+          });
+
+          // ✅ Apply: 서버에 저장/전송 X, 클라 "적용중"만 갱신 + 현황판 업데이트
+          const paramForm = document.getElementById("paramForm");
+          paramForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+
+            setOverlay(true, "프롬프트&하이퍼파라미터 적용중입니다…");
+
+            const cfg = readInputsToConfig();
+            appliedSystemPrompt = cfg.system_prompt;
+            appliedParams = { ...cfg.params };
+
+            renderAppliedPanel();
+
+            // UX: 잠깐만 보여주고 닫기
+            setTimeout(() => setOverlay(false), 250);
+          });
+
+          // overlay 위에서 이벤트 먹기
           const overlay = document.getElementById("overlay");
           overlay.addEventListener("click", (e) => e.preventDefault());
           overlay.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
           document.addEventListener("keydown", (e) => {
             if (overlay.style.display === "flex") e.preventDefault();
           }, { capture: true });
-
-          /* =======================
-             ✅ paramForm submit 방지
-             (Enter로 submit되는 사고 방지)
-          ======================= */
-          const paramForm = document.getElementById("paramForm");
-          paramForm.addEventListener("submit", (e) => {
-            e.preventDefault();
-          });
         });
     </script>
 </head>
@@ -867,7 +838,6 @@
     <!-- ✅ NAVIGATION BAR (공용) - 수정 금지 -->
     <nav class="navbar navbar-expand-lg predict-navbar">
         <div class="container-fluid px-4">
-
             <a class="navbar-brand" href="{{ url_for('index.index') }}">
                 <img src="{{ url_for('static', filename='image/logo2.png') }}"
                      alt="청년 주거 솔루션 로고"
@@ -880,19 +850,23 @@
 
             <div class="collapse navbar-collapse" id="topNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item ms-3"><a class="nav-link" href="{{ url_for('predict.predict_search') }}">전월세
-                        예측</a></li>
-                    <li class="nav-item ms-3"><a class="nav-link"
-                                                 href="{{ url_for('support.support_search') }}">정부지원</a></li>
-                    <li class="nav-item ms-3"><a class="nav-link" href="{{ url_for('login.login') }}">로그인</a></li>
-                    <li class="nav-item ms-3"><a class="nav-link" href="{{ url_for('login.signup') }}">회원가입</a></li>
+                    <li class="nav-item ms-3">
+                        <a class="nav-link" href="{{ url_for('predict.predict_search') }}">전월세 예측</a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <a class="nav-link" href="{{ url_for('support.support_search') }}">정부지원</a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <a class="nav-link" href="{{ url_for('login.login') }}">로그인</a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <a class="nav-link" href="{{ url_for('login.signup') }}">회원가입</a>
+                    </li>
                 </ul>
             </div>
-
         </div>
     </nav>
 
-    <!-- ✅ llama 앱 -->
     <div class="app">
 
         <!-- LEFT -->
@@ -902,6 +876,7 @@
 
                 <button id="resetChat" type="button" class="reset-chat-btn">Reset Chat</button>
 
+                <!-- ✅ reset은 서버가 redirect로 처리 -->
                 <form id="resetChatForm" method="post" style="display:none;">
                     <input type="hidden" name="action" value="reset_chat">
                 </form>
@@ -924,51 +899,47 @@
         </div>
 
         <!-- RIGHT -->
-        <form id="paramForm" class="settings" autocomplete="off">
-            <!-- ✅ Applied 현황판 -->
-            <div class="applied-card">
-                <div class="applied-head">
-                    <div class="applied-title">
-                        Applied Status
-                        <span class="pill">ACTIVE</span>
+        <form id="paramForm" method="post" class="settings">
+            <!-- ✅ 현황판 (현재 적용중) -->
+            <div class="status-card">
+                <div class="status-top">
+                    <div class="status-title">현재 적용중</div>
+                    <div id="appliedBadge" class="status-badge">디폴트</div>
+                </div>
+
+                <div class="status-row">
+                    <div class="status-label">System Prompt</div>
+                    <div class="status-value">
+                        <span id="appliedPrompt" class="status-ellipsis"></span>
                     </div>
-                    <div class="applied-meta">Last: <span id="appliedAt">-</span></div>
                 </div>
 
-                <div class="applied-prompt">
-                    <div class="k">System Prompt (Applied)</div>
-                    <div class="v" id="appliedPromptText">(비어있음)</div>
-                </div>
-
-                <div class="applied-grid">
+                <div class="status-grid">
                     <div class="kv">
-                        <div class="k">Temperature</div>
+                        <div class="k">temperature</div>
                         <div class="v" id="applied_temperature">-</div>
                     </div>
                     <div class="kv">
-                        <div class="k">Top-p</div>
+                        <div class="k">top_p</div>
                         <div class="v" id="applied_top_p">-</div>
                     </div>
                     <div class="kv">
-                        <div class="k">Top-k</div>
+                        <div class="k">top_k</div>
                         <div class="v" id="applied_top_k">-</div>
                     </div>
                     <div class="kv">
-                        <div class="k">Max Tokens</div>
+                        <div class="k">max_tokens</div>
                         <div class="v" id="applied_max_tokens">-</div>
                     </div>
-                    <div class="kv" style="grid-column: 1 / -1;">
-                        <div class="k">Repetition Penalty</div>
+                    <div class="kv">
+                        <div class="k">repetition_penalty</div>
                         <div class="v" id="applied_repetition_penalty">-</div>
                     </div>
                 </div>
-
-                <div class="hint">※ Send 요청에는 항상 “Applied Status” 값이 포함되어 전송됩니다.</div>
             </div>
 
-            <!-- ✅ 입력 영역(기존) -->
             <h3>System Prompt</h3>
-            <textarea id="system_prompt_input" name="system_prompt" rows="4">{{ system_prompt }}</textarea>
+            <textarea id="systemPromptInput" name="system_prompt" rows="4">{{ default_system_prompt }}</textarea>
 
             <h3 style="margin-top:16px;">Hyper Parameters</h3>
 
@@ -976,36 +947,36 @@
                 <label>Temperature (랜덤성)</label>
                 <div class="param-row">
                     <input id="temperature" type="range" min="0.1" max="1.5" step="0.1"
-                           value="{{ params.temperature }}">
-                    <input id="temperature_num" name="temperature" type="number" min="0.1" max="1.5" step="0.1"
-                           value="{{ params.temperature }}">
+                           value="{{ default_params.temperature }}">
+                    <input id="temperature_num" type="number" min="0.1" max="1.5" step="0.1"
+                           value="{{ default_params.temperature }}">
                 </div>
             </div>
 
             <div class="param">
                 <label>Top-p (Nucleus Sampling)</label>
                 <div class="param-row">
-                    <input id="top_p" type="range" min="0.1" max="1" step="0.05" value="{{ params.top_p }}">
-                    <input id="top_p_num" name="top_p" type="number" min="0.1" max="1" step="0.05"
-                           value="{{ params.top_p }}">
+                    <input id="top_p" type="range" min="0.1" max="1" step="0.05" value="{{ default_params.top_p }}">
+                    <input id="top_p_num" type="number" min="0.1" max="1" step="0.05"
+                           value="{{ default_params.top_p }}">
                 </div>
             </div>
 
             <div class="param">
                 <label>Top-k (확률 상위 k개 토큰)</label>
                 <div class="param-row">
-                    <input id="top_k" type="range" min="0" max="100" step="1" value="{{ params.top_k }}">
-                    <input id="top_k_num" name="top_k" type="number" min="0" max="100" step="1"
-                           value="{{ params.top_k }}">
+                    <input id="top_k" type="range" min="0" max="100" step="1" value="{{ default_params.top_k }}">
+                    <input id="top_k_num" type="number" min="0" max="100" step="1" value="{{ default_params.top_k }}">
                 </div>
             </div>
 
             <div class="param">
                 <label>Max Tokens (응답 길이 상한)</label>
                 <div class="param-row">
-                    <input id="max_tokens" type="range" min="32" max="2048" step="32" value="{{ params.max_tokens }}">
-                    <input id="max_tokens_num" name="max_tokens" type="number" min="32" max="2048" step="32"
-                           value="{{ params.max_tokens }}">
+                    <input id="max_tokens" type="range" min="32" max="2048" step="32"
+                           value="{{ default_params.max_tokens }}">
+                    <input id="max_tokens_num" type="number" min="32" max="2048" step="32"
+                           value="{{ default_params.max_tokens }}">
                 </div>
             </div>
 
@@ -1013,21 +984,21 @@
                 <label>Repetition Penalty (중복 억제)</label>
                 <div class="param-row">
                     <input id="repetition_penalty" type="range" min="1" max="1.5" step="0.05"
-                           value="{{ params.repetition_penalty }}">
-                    <input id="repetition_penalty_num" name="repetition_penalty" type="number" min="1" max="1.5"
-                           step="0.05" value="{{ params.repetition_penalty }}">
+                           value="{{ default_params.repetition_penalty }}">
+                    <input id="repetition_penalty_num" type="number" min="1" max="1.5" step="0.05"
+                           value="{{ default_params.repetition_penalty }}">
                 </div>
             </div>
 
+            <!-- ✅ Apply는 서버 저장 X: JS가 submit을 막고 '적용중'만 갱신 -->
             <button type="button" id="resetParams"
                     style="width:100%; padding:10px; border-radius:8px;
-                       border:1px solid #1e293b; background:#334155;
-                       color:white; cursor:pointer; margin-top:12px;">
+                     border:1px solid #1e293b; background:#334155;
+                     color:white; cursor:pointer; margin-top:12px;">
                 Reset to Default
             </button>
 
-            <!-- ✅ Apply는 submit이 아니라 "클라이언트 적용" 버튼 -->
-            <button id="applyBtn" class="apply" type="button">Apply Settings</button>
+            <button class="apply" type="submit">Apply Settings</button>
         </form>
 
     </div>
