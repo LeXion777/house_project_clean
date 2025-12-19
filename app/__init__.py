@@ -2,6 +2,8 @@ from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from app.config import Config
+from .llama_model import startup
+from .llama_model import warmup_model
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -32,5 +34,7 @@ def create_app():
     from app.ai import llama_views, ai_views
     app.register_blueprint(ai_views.bp)
     app.register_blueprint(llama_views.bp)
+
+    warmup_model()
 
     return app
