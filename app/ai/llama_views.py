@@ -24,9 +24,7 @@ DEFAULT_PARAMS = {
 }
 
 # ✅ 디폴트 System Prompt
-DEFAULT_SYSTEM_PROMPT = (
-    "You are a helpful assistant. Always reply in Korean unless the user explicitly asks you to use another language."
-)
+DEFAULT_SYSTEM_PROMPT = ("You are a helpful assistant. Always reply in Korean unless the user explicitly asks you to use another language.")
 
 # ✅ 입력 검증/캐스팅용 스펙(서버 안전장치)
 _PARAM_SPECS = {
