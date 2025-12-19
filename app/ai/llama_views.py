@@ -24,7 +24,7 @@ DEFAULT_PARAMS = {
 }
 
 # ✅ 디폴트 System Prompt (요청한 문구 그대로)
-DEFAULT_SYSTEM_PROMPT = "사용자는 한국인입니다. 특별한 지시가 없는한 한국말로 답변해야합니다."
+DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant. Always reply in Korean unless the user explicitly asks you to use another language."
 
 # ✅ 입력 검증/캐스팅용 스펙
 _PARAM_SPECS = {

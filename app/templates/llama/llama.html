@@ -695,13 +695,18 @@
           /* =======================
              Reset Params (입력값만 초기화 / 적용은 Apply를 눌러야 반영)
           ======================= */
+          const DEFAULT_SYSTEM_PROMPT = {{ default_system_prompt|tojson }};
           const resetParamsBtn = document.getElementById("resetParams");
+          const systemPromptInput = document.getElementById("systemPromptInput");
+
           resetParamsBtn.addEventListener("click", () => {
             setParam("temperature", DEFAULT_PRESET.temperature);
             setParam("top_p", DEFAULT_PRESET.top_p);
             setParam("top_k", DEFAULT_PRESET.top_k);
             setParam("max_tokens", DEFAULT_PRESET.max_tokens);
             setParam("repetition_penalty", DEFAULT_PRESET.repetition_penalty);
+
+            if (systemPromptInput) systemPromptInput.value = DEFAULT_SYSTEM_PROMPT;
           });
 
           /* =======================
