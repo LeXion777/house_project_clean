@@ -502,8 +502,8 @@
 
     <script>
         // ✅ 서버가 주는 "디폴트" (페이지 열 때마다 이것으로 시작)
-        const DEFAULT_PRESET = {{ default_params|tojson }};
-        const DEFAULT_SYSTEM_PROMPT = {{ default_system_prompt|tojson }};
+        const DEFAULT_PRESET = {{ (default_params if default_params is defined else (params if params is defined else {})) | tojson }};
+        const DEFAULT_SYSTEM_PROMPT = {{ (default_system_prompt if default_system_prompt is defined else (system_prompt if system_prompt is defined else "")) | tojson }};
 
         // ✅ 클라에서만 유지되는 "현재 적용중" 값(쿠키/세션 저장 X)
         let appliedSystemPrompt = DEFAULT_SYSTEM_PROMPT;
@@ -939,7 +939,10 @@
             </div>
 
             <h3>System Prompt</h3>
-            <textarea id="systemPromptInput" name="system_prompt" rows="4">{{ default_system_prompt }}</textarea>
+            <textarea id="systemPromptInput" name="system_prompt" rows="4">
+            {{ default_system_prompt if default_system_prompt is defined else system_prompt }}
+            </textarea>
+
 
             <h3 style="margin-top:16px;">Hyper Parameters</h3>
 

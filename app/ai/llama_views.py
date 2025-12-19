@@ -23,10 +23,12 @@ DEFAULT_PARAMS = {
     "repetition_penalty": 1.1,
 }
 
-# ✅ 디폴트 System Prompt (요청한 문구 그대로)
-DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant. Always reply in Korean unless the user explicitly asks you to use another language."
+# ✅ 디폴트 System Prompt
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a helpful assistant. Always reply in Korean unless the user explicitly asks you to use another language."
+)
 
-# ✅ 입력 검증/캐스팅용 스펙
+# ✅ 입력 검증/캐스팅용 스펙(서버 안전장치)
 _PARAM_SPECS = {
     "temperature": {"type": float, "min": 0.0, "max": 2.0},
     "top_p": {"type": float, "min": 0.0, "max": 1.0},
@@ -41,18 +43,13 @@ def _clamp(v, vmin, vmax):
 
 
 def _coerce_param(data: dict, key: str):
-    """
-    data에서 key를 읽어 스펙대로 캐스팅 + 클램핑.
-    실패하면 DEFAULT_PARAMS[key]로 복귀.
-    """
     default = DEFAULT_PARAMS[key]
     spec = _PARAM_SPECS[key]
     raw = data.get(key, default)
 
     try:
         if spec["type"] is int:
-            # "50.0" 같은 문자열도 들어올 수 있어 안전하게 처리
-            val = int(float(raw))
+            val = int(float(raw))  # "50.0" 같은 문자열도 안전 처리
         else:
             val = float(raw)
         val = _clamp(val, spec["min"], spec["max"])
@@ -62,17 +59,10 @@ def _coerce_param(data: dict, key: str):
 
 
 def _extract_request_config(data: dict):
-    """
-    JSON 요청에서 system_prompt/params를 추출.
-    - 세션에 저장하지 않음
-    - 누락/오염은 DEFAULT로 보정
-    """
     sp = data.get("system_prompt", DEFAULT_SYSTEM_PROMPT)
     if not isinstance(sp, str):
         sp = DEFAULT_SYSTEM_PROMPT
-    sp = sp.strip()
-    if not sp:
-        sp = DEFAULT_SYSTEM_PROMPT
+    sp = sp.strip() or DEFAULT_SYSTEM_PROMPT
 
     params = {k: _coerce_param(data, k) for k in DEFAULT_PARAMS.keys()}
     return sp, params
@@ -80,18 +70,14 @@ def _extract_request_config(data: dict):
 
 @bp.route("/llama", methods=["GET", "POST"])
 def llama_chat():
-    # =========================
-    # ✅ 세션에는 "대화내역만" 유지
-    # =========================
+    # ✅ 세션에는 "대화내역만"
     session.setdefault("chat_history", [])
 
-    # =========================
-    # ✅ JSON 요청: 채팅 Send (Apply된 값은 JSON에 실려옴)
-    # =========================
+    # ✅ JSON 요청: 채팅 Send
     if request.method == "POST" and request.is_json:
         data = request.get_json(silent=True) or {}
 
-        # (예전 UI 호환) JSON으로 reset_chat을 보낸 경우도 처리
+        # (UI 호환) JSON reset_chat도 처리
         if data.get("action") == "reset_chat":
             session["chat_history"] = []
             session.modified = True
@@ -104,12 +90,10 @@ def llama_chat():
 
         system_prompt, params = _extract_request_config(data)
 
-        # ✅ generate 직전 로그(너무 길면 보기 힘드니 앞부분만)
         sp_preview = (system_prompt[:180] + "…") if len(system_prompt) > 180 else system_prompt
         log.info("[SEND] system_prompt=%r", sp_preview)
         log.info("[SEND] params=%s", params)
 
-        # ✅ 대화 히스토리 누적(세션)
         session["chat_history"].append({"role": "user", "content": user_input})
 
         assistant_reply = generate_chat(
@@ -122,10 +106,7 @@ def llama_chat():
         session.modified = True
         return jsonify({"answer": assistant_reply})
 
-    # =========================
     # ✅ FORM 요청: Reset Chat만 지원
-    # (Apply는 이제 클라이언트에서만 처리하므로 서버에서 저장/적용 X)
-    # =========================
     if request.method == "POST":
         action = request.form.get("action", "")
 
@@ -135,16 +116,18 @@ def llama_chat():
             log.info("[RESET_CHAT:FORM] chat_history cleared")
             return redirect(url_for("llama.llama_chat"))
 
-        # 알 수 없는 action이 와도 화면 복귀
         return redirect(url_for("llama.llama_chat"))
 
-    # =========================
-    # ✅ GET: 항상 "디폴트 값"으로 렌더링
-    # (쿠키/세션에 저장된 system_prompt/params는 아예 사용하지 않음)
-    # =========================
+    # ✅ GET: 항상 디폴트로 렌더링
     return render_template(
         "llama/llama.html",
         chat_history=session.get("chat_history", []),
+
+        # ✅ 새 템플릿 변수명(이번에 사용하는 이름)
+        default_params=DEFAULT_PARAMS,
+        default_system_prompt=DEFAULT_SYSTEM_PROMPT,
+
+        # ✅ (혹시 템플릿이 예전 걸로 남아있어도 깨지지 않게) 구 변수명도 같이 전달
         params=DEFAULT_PARAMS,
-        system_prompt=DEFAULT_SYSTEM_PROMPT
+        system_prompt=DEFAULT_SYSTEM_PROMPT,
     )
