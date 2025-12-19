@@ -2,8 +2,7 @@ from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from app.config import Config
-from .llama_model import startup
-from .llama_model import warmup_model
+from .ai.llama_model import startup, warmup_model
 
 db = SQLAlchemy()
 migrate = Migrate()
