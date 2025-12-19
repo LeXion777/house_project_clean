@@ -181,6 +181,9 @@ def load_model():
 
         ensure_hf_login()
 
+        print(f"[LLAMA_LOAD] base={BASE_MODEL_NAME}")
+        print(f"[LLAMA_LOAD] lora_dir={OUTPUT_LORA_DIR}")
+
         quantization_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_compute_dtype=torch.bfloat16,
@@ -202,10 +205,23 @@ def load_model():
         model = PeftModel.from_pretrained(base_model, OUTPUT_LORA_DIR)
         model.eval()
 
+        # ✅ LoRA 적용 확인 로그 (핵심)
+        try:
+            # peft 버전에 따라 속성명이 조금 다를 수 있어 try로 안전 처리
+            adapters = getattr(model, "peft_config", None)
+            if adapters:
+                print(f"[LLAMA_LOAD] peft_adapters={list(adapters.keys())}")
+            else:
+                print("[LLAMA_LOAD] peft_adapters=UNKNOWN (peft_config not found)")
+        except Exception as e:
+            print(f"[LLAMA_LOAD] peft_adapters=ERROR {repr(e)}")
+
         tokenizer = AutoTokenizer.from_pretrained(OUTPUT_LORA_DIR)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
             model.config.pad_token_id = tokenizer.eos_token_id
+
+        print("[LLAMA_LOAD] ✅ model+tokenizer ready (base+LoRA applied)")
 
 
 # =========================================================
