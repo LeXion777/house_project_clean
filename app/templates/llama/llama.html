@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"/>
     <title>LLaMA3 Chat Playground</title>
 
     <!-- ✅ 네비게이션 바가 Bootstrap 기반이므로 llama.html에서만 Bootstrap 로드 -->
@@ -9,54 +9,58 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
-        :root {
-          /* ✅ 밝은 테마로 조정 (네비게이션바는 그대로 유지) */
-          --bg: #f6f8fc;                 /* 페이지 배경 */
-          --panel: #ffffff;              /* 카드/패널 */
-          --panel-soft: #f3f6fb;         /* 부드러운 패널(채팅 영역 배경 등) */
-          --border: #d8e2f0;             /* 경계선 */
-          --shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+        :root{
+          /* =========================
+             ✅ MODERN "SOFT DARK" (너무 어둡지도/밝지도 않게)
+             - 네비바는 그대로(아래 'predict-navbar' 섹션 수정 금지)
+          ========================= */
+          --bg: #0f172a;               /* 전체 배경(딥 네이비) */
+          --bg-2: #111c2f;             /* 그라데이션 보조 */
+          --panel: rgba(17, 24, 39, 0.78);   /* 패널(유리 느낌) */
+          --panel-solid: #111827;      /* 고정 패널 */
+          --surface: rgba(255,255,255,0.06);/* 카드/버블용 표면 */
+          --surface-2: rgba(255,255,255,0.08);
+          --border: rgba(148,163,184,0.18);
+          --border-2: rgba(148,163,184,0.26);
+          --shadow: 0 14px 40px rgba(0,0,0,0.35);
 
-          /* ✅ 시그니처/포인트(로고 주황 활용) */
+          --text: #e5e7eb;
+          --muted: #94a3b8;
+
+          /* 포인트 컬러(로고 주황 + 블루) */
           --brand: #ff6b00;
-          --primary: #1b64da;            /* 버튼/사용자 말풍선 */
-          --primary-soft: rgba(27,100,218,0.10);
-
-          /* 텍스트 */
-          --text: #0f172a;
-          --muted: #64748b;
+          --primary: #3b82f6;
 
           /* 말풍선 */
-          --assistant: #eef2f7;          /* 어시스턴트 말풍선(밝게) */
-          --assistant-border: #dde6f3;
+          --assistant: rgba(148,163,184,0.12);
+          --assistant-strong: rgba(148,163,184,0.16);
 
-          --nav-h: 70px;                 /* ✅ 네비 높이(요구사항) */
+          --nav-h: 70px; /* ✅ 네비 높이(요구사항) */
         }
 
         * { box-sizing: border-box; font-family: Pretendard, sans-serif; }
 
-        html, body {
-          margin: 0;
-          padding: 0;
-          height: 100%;
-        }
+        html, body { margin:0; padding:0; height:100%; }
 
-        body {
-          background: var(--bg);
+        body{
           color: var(--text);
           overflow: hidden; /* ✅ 페이지 스크롤 제거 */
+          background:
+            radial-gradient(1200px 700px at 18% 0%, rgba(255,107,0,0.10), transparent 60%),
+            radial-gradient(900px 600px at 85% 15%, rgba(59,130,246,0.14), transparent 55%),
+            linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
         }
 
-        /* ✅ 네비+앱 전체를 한 화면에 고정: 네비(70px) + 앱(나머지) */
-        .page-wrapper {
+        /* ✅ 네비+앱 전체를 한 화면에 고정 */
+        .page-wrapper{
           height: 100vh;
           display: flex;
           flex-direction: column;
           overflow: hidden;
         }
 
-        /* ✅ 기존 llama 앱 높이를 네비만큼 줄여서 스크롤 없이 한 화면 */
-        .app {
+        /* ✅ 앱 영역: 네비 높이만큼 제외 */
+        .app{
           height: calc(100vh - var(--nav-h));
           display: grid;
           grid-template-columns: 1fr 380px;
@@ -64,276 +68,288 @@
         }
 
         /* ===== LEFT ===== */
-        .main {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-          min-height: 0;
-          background: var(--panel-soft);
+        .main{
+          display:flex;
+          flex-direction:column;
+          height:100%;
+          min-height:0;
+          background: transparent;
         }
 
-        header {
-          padding: 12px 20px;
-          background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+        header{
+          padding: 12px 18px;
           border-bottom: 1px solid var(--border);
-          font-weight: 800;
+          font-weight: 900;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:12px;
+          min-height: 56px;
 
-          /* ✅ 헤더에 안전하게 버튼 배치(우측) */
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          min-height: 52px;
-
-          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+          /* ✅ 모던한 반투명 헤더 */
+          background: linear-gradient(180deg, rgba(17,24,39,0.70) 0%, rgba(17,24,39,0.52) 100%);
+          backdrop-filter: blur(10px);
         }
 
-        .header-title {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          min-width: 0;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          color: var(--text);
+        .header-title{
+          display:flex;
+          align-items:center;
+          gap:10px;
+          min-width:0;
+          white-space:nowrap;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          letter-spacing: -0.2px;
         }
 
-        /* ✅ 대화 초기화 버튼(위험 줄이기: 작게 + 헤더 우측 + 경고톤) */
-        .reset-chat-btn {
+        .header-title::before{
+          content:"🦙";
+          opacity: 0.95;
+        }
+
+        /* ✅ 대화 초기화 버튼: 위험도 낮게(작게/헤더 우측/차분한 경고톤) */
+        .reset-chat-btn{
           padding: 8px 12px;
-          border-radius: 10px;
-          border: 1px solid rgba(239,68,68,0.45);
-          background: rgba(239,68,68,0.08);
-          color: #b91c1c;
+          border-radius: 999px;
+          border: 1px solid rgba(248,113,113,0.45);
+          background: rgba(248,113,113,0.10);
+          color: #fecaca;
           cursor: pointer;
           font-weight: 800;
           font-size: 13px;
-          white-space: nowrap;
           line-height: 1;
-          box-shadow: 0 6px 14px rgba(239, 68, 68, 0.10);
+          white-space: nowrap;
+          transition: transform .12s ease, background .12s ease, border-color .12s ease;
         }
-        .reset-chat-btn:hover {
-          background: rgba(239,68,68,0.12);
-          border-color: rgba(239,68,68,0.60);
+        .reset-chat-btn:hover{
+          background: rgba(248,113,113,0.14);
+          border-color: rgba(248,113,113,0.70);
+          transform: translateY(-1px);
         }
-        .reset-chat-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
+        .reset-chat-btn:active{ transform: translateY(0px); }
+        .reset-chat-btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
 
-        .chat-wrapper {
-          flex: 1;
-          min-height: 0;
-          overflow-y: auto;
+        .chat-wrapper{
+          flex:1;
+          min-height:0;
+          overflow-y:auto;
           padding: 22px;
-          background:
-            radial-gradient(1200px 600px at 20% 0%, rgba(255,107,0,0.07), transparent 60%),
-            radial-gradient(900px 500px at 90% 20%, rgba(27,100,218,0.08), transparent 55%),
-            var(--panel-soft);
         }
 
-        .chat {
-          max-width: 900px;
+        .chat{
+          max-width: 920px;
           margin: 0 auto;
         }
 
-        .msg {
+        .msg{
           max-width: 75%;
           padding: 12px 16px;
-          border-radius: 14px;
+          border-radius: 16px;
           margin-bottom: 14px;
-          line-height: 1.6;
+          line-height: 1.65;
           white-space: pre-wrap;
           word-break: break-word;
-          box-shadow: 0 10px 22px rgba(15,23,42,0.06);
+
+          background: var(--surface);
+          border: 1px solid var(--border);
+          box-shadow: 0 10px 26px rgba(0,0,0,0.22);
         }
 
-        .msg.user {
-          background: linear-gradient(180deg, rgba(27,100,218,0.92), rgba(27,100,218,0.82));
-          color: #ffffff;
-          margin-left: auto;
-          border: 1px solid rgba(27,100,218,0.20);
+        .msg.user{
+          margin-left:auto;
+          background: linear-gradient(180deg, rgba(59,130,246,0.92), rgba(59,130,246,0.78));
+          border-color: rgba(59,130,246,0.28);
+          color:#fff;
         }
 
-        .msg.assistant {
-          background: var(--assistant);
+        .msg.assistant{
+          margin-right:auto;
+          background: linear-gradient(180deg, var(--assistant-strong), var(--assistant));
+          border-color: var(--border);
           color: var(--text);
-          margin-right: auto;
-          border: 1px solid var(--assistant-border);
         }
 
-        .msg.typing {
-          background: var(--assistant);
+        .msg.typing{
+          margin-right:auto;
+          background: linear-gradient(180deg, var(--assistant-strong), var(--assistant));
           color: var(--muted);
           font-style: italic;
-          border: 1px solid var(--assistant-border);
         }
 
-        .msg.typing::after {
-          content: "...";
+        .msg.typing::after{
+          content:"...";
           animation: dots 1.2s infinite;
         }
 
-        @keyframes dots {
+        @keyframes dots{
           0% { content: "."; }
           33% { content: ".."; }
           66% { content: "..."; }
         }
 
-        /* Input */
-        .input-bar {
+        /* ===== Input ===== */
+        .input-bar{
           border-top: 1px solid var(--border);
-          background: #ffffff;
-          padding: 14px 20px;
-          box-shadow: 0 -10px 22px rgba(15,23,42,0.06);
+          padding: 14px 18px;
+          background: linear-gradient(180deg, rgba(17,24,39,0.56) 0%, rgba(17,24,39,0.70) 100%);
+          backdrop-filter: blur(10px);
         }
 
-        .input-inner {
-          max-width: 900px;
+        .input-inner{
+          max-width: 920px;
           margin: 0 auto;
-          display: flex;
+          display:flex;
           gap: 10px;
+          align-items: stretch;
         }
 
-        textarea#prompt {
-          flex: 1;
-          resize: none;
+        textarea#prompt{
+          flex:1;
+          resize:none;
           padding: 12px 12px;
-          border-radius: 12px;
-          background: #ffffff;
+          border-radius: 14px;
+          background: rgba(15,23,42,0.55);
           border: 1px solid var(--border);
           color: var(--text);
           outline: none;
-          box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+          box-shadow: 0 10px 26px rgba(0,0,0,0.18);
         }
-        textarea#prompt:focus {
-          border-color: rgba(27,100,218,0.45);
+        textarea#prompt::placeholder{ color: rgba(148,163,184,0.85); }
+        textarea#prompt:focus{
+          border-color: rgba(59,130,246,0.55);
           box-shadow:
-            0 10px 24px rgba(27,100,218,0.12),
-            0 0 0 4px rgba(27,100,218,0.10);
+            0 14px 34px rgba(59,130,246,0.16),
+            0 0 0 4px rgba(59,130,246,0.12);
+          background: rgba(15,23,42,0.68);
         }
 
-        button {
+        button{
           padding: 0 20px;
-          border-radius: 12px;
-          border: 1px solid rgba(27,100,218,0.18);
-          background: linear-gradient(180deg, rgba(27,100,218,0.95), rgba(27,100,218,0.85));
-          color: white;
+          border-radius: 14px;
+          border: 1px solid rgba(59,130,246,0.30);
+          background: linear-gradient(180deg, rgba(59,130,246,0.95), rgba(59,130,246,0.78));
+          color: #fff;
           cursor: pointer;
-          font-weight: 800;
-          box-shadow: 0 10px 22px rgba(27,100,218,0.14);
+          font-weight: 900;
+          box-shadow: 0 12px 28px rgba(59,130,246,0.18);
+          transition: transform .12s ease, filter .12s ease;
         }
-        button:hover {
-          filter: brightness(1.02);
-        }
-
-        button:disabled {
-          opacity: 0.5;
+        button:hover{ filter: brightness(1.03); transform: translateY(-1px); }
+        button:active{ transform: translateY(0px); }
+        button:disabled{
+          opacity: 0.55;
           cursor: not-allowed;
           box-shadow: none;
+          transform: none;
         }
 
         /* ===== RIGHT SETTINGS ===== */
-        .settings {
-          background: #ffffff;
+        .settings{
+          background: linear-gradient(180deg, rgba(17,24,39,0.78) 0%, rgba(17,24,39,0.70) 100%);
           border-left: 1px solid var(--border);
-          padding: 20px;
+          padding: 18px 18px 22px;
           overflow-y: auto;
-          box-shadow: -10px 0 22px rgba(15,23,42,0.06);
+          backdrop-filter: blur(10px);
         }
 
-        .settings h3 {
+        .settings h3{
           margin-top: 0;
           margin-bottom: 10px;
-          font-weight: 900;
-          color: var(--text);
+          font-weight: 950;
+          letter-spacing: -0.3px;
         }
 
         .settings textarea[name="system_prompt"]{
-          background: #ffffff !important;
+          width: 100%;
+          background: rgba(15,23,42,0.55) !important;
           color: var(--text) !important;
           border: 1px solid var(--border) !important;
-          border-radius: 12px !important;
+          border-radius: 14px !important;
           padding: 10px 12px !important;
           outline: none !important;
-          box-shadow: 0 8px 18px rgba(15,23,42,0.06);
         }
         .settings textarea[name="system_prompt"]:focus{
-          border-color: rgba(255,107,0,0.55) !important;
-          box-shadow:
-            0 10px 24px rgba(255,107,0,0.14),
-            0 0 0 4px rgba(255,107,0,0.10) !important;
+          border-color: rgba(255,107,0,0.60) !important;
+          box-shadow: 0 0 0 4px rgba(255,107,0,0.14) !important;
+          background: rgba(15,23,42,0.68) !important;
         }
 
-        .param { margin-bottom: 16px; }
-
-        .param label {
+        .param{ margin-bottom: 16px; }
+        .param label{
           font-size: 13px;
           color: var(--muted);
-          display: block;
+          display:block;
           margin-bottom: 6px;
-          font-weight: 700;
+          font-weight: 750;
         }
 
-        .param-row {
-          display: flex;
-          gap: 10px;
-          align-items: center;
+        .param-row{
+          display:flex;
+          gap:10px;
+          align-items:center;
         }
 
-        .param-row input[type=range] { flex: 1; }
+        /* ✅ range 모던 스타일 */
+        .param-row input[type=range]{
+          flex:1;
+          accent-color: var(--primary);
+        }
 
-        .param-row input[type=number] {
-          width: 76px;
-          background: #ffffff;
+        .param-row input[type=number]{
+          width: 78px;
+          background: rgba(15,23,42,0.55);
           border: 1px solid var(--border);
           color: var(--text);
-          border-radius: 10px;
+          border-radius: 12px;
           padding: 6px 8px;
-          outline: none;
-          box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+          outline:none;
         }
-        .param-row input[type=number]:focus {
-          border-color: rgba(27,100,218,0.45);
-          box-shadow:
-            0 10px 24px rgba(27,100,218,0.12),
-            0 0 0 4px rgba(27,100,218,0.10);
+        .param-row input[type=number]:focus{
+          border-color: rgba(59,130,246,0.55);
+          box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+          background: rgba(15,23,42,0.68);
         }
 
-        /* 버튼 2개(Reset/Apply) 느낌 정리 */
+        /* ✅ Reset to Default 버튼: inline style 있어도 덮어쓰기 */
         #resetParams{
+          width: 100% !important;
+          padding: 12px 10px !important;
+          border-radius: 14px !important;
           border: 1px solid var(--border) !important;
-          background: linear-gradient(180deg, #ffffff 0%, #f2f6fc 100%) !important;
+          background: linear-gradient(180deg, rgba(148,163,184,0.10), rgba(148,163,184,0.06)) !important;
           color: var(--text) !important;
+          cursor: pointer !important;
+          margin-top: 12px !important;
           font-weight: 900 !important;
-          box-shadow: 0 10px 22px rgba(15,23,42,0.08) !important;
+          box-shadow: 0 12px 26px rgba(0,0,0,0.18) !important;
         }
         #resetParams:hover{
-          box-shadow: 0 12px 26px rgba(15,23,42,0.10) !important;
+          filter: brightness(1.03);
+          transform: translateY(-1px);
         }
 
-        .apply {
+        /* ✅ Apply 버튼: 브랜드(주황) 사용 */
+        .apply{
           width: 100%;
           padding: 12px 10px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,107,0,0.25);
-          background: linear-gradient(180deg, rgba(255,107,0,0.95), rgba(255,107,0,0.85));
-          color: #ffffff;
+          border-radius: 14px;
+          border: 1px solid rgba(255,107,0,0.28);
+          background: linear-gradient(180deg, rgba(255,107,0,0.96), rgba(255,107,0,0.78));
+          color: #fff;
           cursor: pointer;
           margin-top: 12px;
-          font-weight: 900;
-          box-shadow: 0 12px 26px rgba(255,107,0,0.18);
+          font-weight: 950;
+          box-shadow: 0 14px 30px rgba(255,107,0,0.18);
+          transition: transform .12s ease, filter .12s ease;
         }
-        .apply:hover {
-          filter: brightness(1.02);
-        }
+        .apply:hover{ filter: brightness(1.03); transform: translateY(-1px); }
+        .apply:active{ transform: translateY(0px); }
 
         /* ===== OVERLAY (Apply/Reset 중 잠금) ===== */
-        .overlay {
+        .overlay{
           position: fixed;
           inset: 0;
-          background: rgba(15,23,42,0.35);
+          background: rgba(0,0,0,0.45);
           backdrop-filter: blur(2px);
           display: none;
           align-items: center;
@@ -342,19 +358,20 @@
           pointer-events: all;
         }
 
-        .overlay-box {
-          background: #ffffff;
-          padding: 22px 28px;
-          border-radius: 14px;
-          font-size: 16px;
-          border: 1px solid var(--border);
+        .overlay-box{
+          background: rgba(17,24,39,0.92);
+          border: 1px solid var(--border-2);
           color: var(--text);
+          padding: 20px 26px;
+          border-radius: 16px;
+          font-size: 15px;
+          font-weight: 900;
           box-shadow: var(--shadow);
-          font-weight: 800;
+          backdrop-filter: blur(10px);
         }
 
         /* ======================================
-           ✅ 전월세 지도 페이지 전용 네비게이션바 CSS (그대로) - 수정 금지
+           ✅ 전월세 지도 페이지 전용 네비게이션바 CSS (공용) - 수정 금지
         ====================================== */
         .predict-navbar {
           background: linear-gradient(90deg, #0b1d33, #0f2a52);
@@ -389,20 +406,26 @@
           filter: brightness(200%);
         }
 
-        /* ✅ 스크롤바(선택): 너무 튀지 않게 밝은 테마용 */
+        /* ✅ 스크롤바(모던 다크) */
         .chat-wrapper::-webkit-scrollbar,
-        .settings::-webkit-scrollbar {
-          width: 10px;
-        }
+        .settings::-webkit-scrollbar { width: 10px; }
+
         .chat-wrapper::-webkit-scrollbar-thumb,
-        .settings::-webkit-scrollbar-thumb {
-          background: rgba(100,116,139,0.28);
+        .settings::-webkit-scrollbar-thumb{
+          background: rgba(148,163,184,0.28);
           border-radius: 999px;
-          border: 2px solid rgba(255,255,255,0.65);
+          border: 2px solid rgba(17,24,39,0.55);
         }
+
         .chat-wrapper::-webkit-scrollbar-track,
-        .settings::-webkit-scrollbar-track {
-          background: rgba(255,255,255,0.0);
+        .settings::-webkit-scrollbar-track{
+          background: rgba(0,0,0,0);
+        }
+
+        /* ✅ 작은 화면 대응 */
+        @media (max-width: 992px){
+          .app{ grid-template-columns: 1fr; }
+          .settings{ display:none; }
         }
     </style>
 
@@ -660,7 +683,7 @@
           ======================= */
           const paramForm = document.getElementById("paramForm");
           paramForm.addEventListener("submit", () => {
-            setOverlay(true, "하이퍼파라미터 적용중입니다…");
+            setOverlay(true, "프롬프트&하이퍼파라미터 적용중입니다…");
           });
 
           /* =======================
@@ -678,7 +701,7 @@
 
 <body>
 <div class="overlay" id="overlay">
-    <div class="overlay-box" id="overlayText">하이퍼파라미터 적용중입니다…</div>
+    <div class="overlay-box" id="overlayText">프롬프트&하이퍼파라미터 적용중입니다…</div>
 </div>
 
 <div class="page-wrapper">
@@ -723,7 +746,7 @@
         <!-- LEFT -->
         <div class="main">
             <header>
-                <div class="header-title">🦙 LLaMA3 8B Chat Playground</div>
+                <div class="header-title">LLaMA3 8B Chat</div>
 
                 <!-- ✅ 대화 초기화 버튼: 헤더 우측에 작게 배치 -->
                 <button id="resetChat" type="button" class="reset-chat-btn">Reset Chat</button>
@@ -753,9 +776,9 @@
         <!-- RIGHT -->
         <form id="paramForm" method="post" class="settings">
             <h3>System Prompt</h3>
-            <textarea name="system_prompt" rows="4" style="width:100%">{{ system_prompt }}</textarea>
+            <textarea name="system_prompt" rows="4">{{ system_prompt }}</textarea>
 
-            <h3>Hyper Parameters</h3>
+            <h3 style="margin-top:16px;">Hyper Parameters</h3>
 
             <div class="param">
                 <label>Temperature (랜덤성)</label>
@@ -806,6 +829,7 @@
 
             <input type="hidden" name="action" value="apply_params">
 
+            <!-- (기존 inline style이 있어도 CSS에서 #resetParams로 덮어씀) -->
             <button type="button" id="resetParams"
                     style="width:100%; padding:10px; border-radius:8px;
                        border:1px solid #1e293b; background:#334155;
