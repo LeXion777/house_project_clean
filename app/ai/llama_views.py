@@ -1,11 +1,10 @@
 # llama_views.py
 import logging
 from flask import Blueprint, render_template, request, session, jsonify, redirect, url_for
-from .llama_model import generate_chat
+from .llama_model import generate_chat  # ✅ generate_chat이 finetune_id 지원
 
 bp = Blueprint("llama", __name__)
 
-# ✅ 터미널 로그 핸들러
 log = logging.getLogger("llama")
 if not log.handlers:
     handler = logging.StreamHandler()
@@ -14,7 +13,6 @@ if not log.handlers:
     log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-# ✅ 디폴트 하이퍼파라미터 (generate_chat 시그니처에 맞춘 5개)
 DEFAULT_PARAMS = {
     "temperature": 0.7,
     "top_p": 0.9,
@@ -23,16 +21,13 @@ DEFAULT_PARAMS = {
     "repetition_penalty": 1.1,
 }
 
-# ✅ 디폴트 System Prompt
 DEFAULT_SYSTEM_PROMPT = (
     "You are a helpful assistant. Always reply in Korean unless the user explicitly asks you to use another language."
 )
 
-# ✅ (추가) 디폴트 Fine-tuning 체크포인트
+# ✅ 디폴트 Fine-tuning 체크포인트 (부팅 기본값: ckpt_100 유지)
 DEFAULT_FINETUNE_ID = "ckpt_100"
 
-# ✅ (추가) Fine-tuning 프리셋(서버 제공용)
-# - UI는 이 값을 그대로 렌더링에 사용
 FINETUNE_PRESETS = [
     {
         "id": "ckpt_50",
@@ -65,7 +60,6 @@ FINETUNE_PRESETS = [
     },
 ]
 
-# ✅ 입력 검증/캐스팅용 스펙(서버 안전장치)
 _PARAM_SPECS = {
     "temperature": {"type": float, "min": 0.0, "max": 2.0},
     "top_p": {"type": float, "min": 0.0, "max": 1.0},
@@ -86,7 +80,7 @@ def _coerce_param(data: dict, key: str):
 
     try:
         if spec["type"] is int:
-            val = int(float(raw))  # "50.0" 같은 문자열도 안전 처리
+            val = int(float(raw))
         else:
             val = float(raw)
         val = _clamp(val, spec["min"], spec["max"])
@@ -106,7 +100,6 @@ def _extract_request_config(data: dict):
 
 
 def _sanitize_finetune_id(raw_id: str) -> str:
-    """UI에서 넘어온 finetune_id를 서버 목록 기준으로 검증."""
     if not isinstance(raw_id, str):
         return DEFAULT_FINETUNE_ID
     raw_id = raw_id.strip()
@@ -116,14 +109,11 @@ def _sanitize_finetune_id(raw_id: str) -> str:
 
 @bp.route("/llama", methods=["GET", "POST"])
 def llama_chat():
-    # ✅ 세션에는 "대화내역만"
     session.setdefault("chat_history", [])
 
-    # ✅ JSON 요청: 채팅 Send
     if request.method == "POST" and request.is_json:
         data = request.get_json(silent=True) or {}
 
-        # (UI 호환) JSON reset_chat도 처리
         if data.get("action") == "reset_chat":
             session["chat_history"] = []
             session.modified = True
@@ -136,7 +126,6 @@ def llama_chat():
 
         system_prompt, params = _extract_request_config(data)
 
-        # ✅ (추가) finetune_id 수신 (현재 generate_chat에는 미반영)
         finetune_id = _sanitize_finetune_id(data.get("finetune_id", DEFAULT_FINETUNE_ID))
         log.info("[SEND] finetune_id=%s", finetune_id)
 
@@ -146,14 +135,11 @@ def llama_chat():
 
         session["chat_history"].append({"role": "user", "content": user_input})
 
-        # ⚠️ NOTE:
-        # 현재 generate_chat() 시그니처에 finetune_id가 없어서 여기서는 사용하지 않습니다.
-        # 추후 generate_chat이 finetune_id(체크포인트 경로/어댑터)를 지원하면 아래처럼 전달하면 됩니다.
-        # assistant_reply = generate_chat(session["chat_history"], system_prompt=system_prompt, finetune_id=finetune_id, **params)
-
+        # ✅ 여기서 finetune_id 전달 → llama_model.py가 필요 시 스위칭 로드
         assistant_reply = generate_chat(
             session["chat_history"],
             system_prompt=system_prompt,
+            finetune_id=finetune_id,
             **params,
         )
 
@@ -161,7 +147,6 @@ def llama_chat():
         session.modified = True
         return jsonify({"answer": assistant_reply})
 
-    # ✅ FORM 요청: Reset Chat만 지원
     if request.method == "POST":
         action = request.form.get("action", "")
 
@@ -173,20 +158,16 @@ def llama_chat():
 
         return redirect(url_for("llama.llama_chat"))
 
-    # ✅ GET: 항상 디폴트로 렌더링
     return render_template(
         "llama/llama.html",
         chat_history=session.get("chat_history", []),
 
-        # ✅ Fine-tuning 프리셋 + 디폴트(ckpt_100)
         finetune_presets=FINETUNE_PRESETS,
         default_finetune_id=DEFAULT_FINETUNE_ID,
 
-        # ✅ 새 템플릿 변수명(이번에 사용하는 이름)
         default_params=DEFAULT_PARAMS,
         default_system_prompt=DEFAULT_SYSTEM_PROMPT,
 
-        # ✅ (혹시 템플릿이 예전 걸로 남아있어도 깨지지 않게) 구 변수명도 같이 전달
         params=DEFAULT_PARAMS,
         system_prompt=DEFAULT_SYSTEM_PROMPT,
     )

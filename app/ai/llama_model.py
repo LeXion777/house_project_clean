@@ -28,26 +28,53 @@ from huggingface_hub import login
 # =========================================================
 BASE_MODEL_NAME = "meta-llama/Meta-Llama-3-8B"
 
-# LoRA 파인튜닝 결과(기존과 동일)
-LORA_PATH = os.path.join(os.path.dirname(__file__), "checkpoint-100")
+# ✅ 서버 최초 부팅 기본 체크포인트(요구사항: 훼손 금지)
+DEFAULT_FINETUNE_ID = "ckpt_100"
 
-# 파인튜닝을 “서버 부팅 시 자동 수행” 하고 싶다면,
-# 학습 결과를 저장할 디렉토리를 별도로 두는 편이 관리가 좋음.
-# (기존 checkpoint-100을 그대로 쓰려면 아래 OUTPUT_LORA_DIR을 LORA_PATH로 두면 됨)
-OUTPUT_LORA_DIR = os.getenv("LORA_OUTPUT_DIR", LORA_PATH)
+# llama_model.py와 같은 폴더에 checkpoint-100/50이 있다고 가정
+_THIS_DIR = os.path.dirname(__file__)
+_DEFAULT_CKPT100_DIR = os.getenv("LORA_OUTPUT_DIR", os.path.join(_THIS_DIR, "checkpoint-100"))
 
-# “파인튜닝 완료” 마커 & 락 파일
+
+def _derive_ckpt50_dir(ckpt100_dir: str) -> str:
+    """
+    checkpoint-50은 checkpoint-100과 동일 경로에서 폴더명만 다르다고 가정.
+    - env로 ckpt100 경로를 바꿔도, 그 부모에서 checkpoint-50을 찾도록 함.
+    """
+    try:
+        base = os.path.basename(os.path.normpath(ckpt100_dir))
+        parent = os.path.dirname(os.path.normpath(ckpt100_dir))
+        if base == "checkpoint-100":
+            return os.path.join(parent, "checkpoint-50")
+    except Exception:
+        pass
+    return os.path.join(_THIS_DIR, "checkpoint-50")
+
+
+_FINETUNE_DIR_MAP = {
+    "ckpt_100": _DEFAULT_CKPT100_DIR,
+    "ckpt_50": _derive_ckpt50_dir(_DEFAULT_CKPT100_DIR),
+}
+
+# ✅ (기존 구조 유지) "부팅 시 필요하면 학습"은 ckpt_100(OUTPUT_LORA_DIR)만 대상으로 둠
+OUTPUT_LORA_DIR = _FINETUNE_DIR_MAP["ckpt_100"]
 FINETUNE_DONE_MARK = os.path.join(OUTPUT_LORA_DIR, ".finetune_done")
 FINETUNE_LOCK_FILE = os.path.join(OUTPUT_LORA_DIR, ".finetune_lock")
 
-tokenizer = None
-model = None
+# =========================================================
+# Globals
+# =========================================================
+tokenizer = None  # base tokenizer (권장)
+base_model = None  # base quantized model
+model = None  # PeftModel (base + selected adapter)
+_current_finetune_id = None
+
 _logged_in = False
 
 # ✅ 동시 generate 보호(Transformers/GPU는 멀티스레드 동시 generate가 자주 문제남)
 _generate_lock = threading.Lock()
 
-# ✅ 모델 로딩 동시성 보호(부팅/요청이 겹쳐도 1번만 로드)
+# ✅ 모델 로딩/스위칭 동시성 보호
 _load_lock = threading.Lock()
 
 # ✅ 초기화 상태
@@ -74,7 +101,7 @@ def ensure_hf_login():
 
 
 # =========================================================
-# (옵션) 파인튜닝 트리거
+# (옵션) 파인튜닝 트리거 (ckpt_100만)
 # =========================================================
 def _lora_checkpoint_exists(path: str) -> bool:
     # PeftModel.from_pretrained가 읽을 핵심 파일들 존재 여부로 체크
@@ -114,11 +141,10 @@ def _release_file_lock(fd: int, lock_path: str):
 
 def maybe_finetune_lora():
     """
-    ✅ 서버 부팅 시 “필요하면” LoRA 파인튜닝 1회 수행.
+    ✅ 서버 부팅 시 “필요하면” LoRA 파인튜닝 1회 수행 (ckpt_100만)
     - 이미 OUTPUT_LORA_DIR에 체크포인트가 있거나 .finetune_done이 있으면 스킵
     - 락으로 중복 실행 방지
     """
-    # 기존 LoRA가 이미 있으면 스킵
     if os.path.exists(FINETUNE_DONE_MARK) or _lora_checkpoint_exists(OUTPUT_LORA_DIR):
         return
 
@@ -126,7 +152,6 @@ def maybe_finetune_lora():
 
     lock_fd = _acquire_file_lock(FINETUNE_LOCK_FILE, timeout_sec=6 * 3600)
     try:
-        # 락 잡고 다시 한 번 확인(경합 방지)
         if os.path.exists(FINETUNE_DONE_MARK) or _lora_checkpoint_exists(OUTPUT_LORA_DIR):
             return
 
@@ -154,7 +179,6 @@ def maybe_finetune_lora():
         print("[FINETUNE] running:", " ".join(cmd))
         subprocess.run(cmd, check=True)
 
-        # 완료 마커
         with open(FINETUNE_DONE_MARK, "w", encoding="utf-8") as f:
             f.write(time.strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -163,51 +187,95 @@ def maybe_finetune_lora():
 
 
 # =========================================================
-# 모델 로딩 (Base + LoRA)
+# Finetune ID -> dir
 # =========================================================
-def load_model():
-    """
-    ✅ Base + LoRA 로딩 (동시 호출에도 1회만 수행)
-    """
-    global tokenizer, model
+def _resolve_lora_dir(finetune_id: str) -> str:
+    if not isinstance(finetune_id, str):
+        finetune_id = DEFAULT_FINETUNE_ID
+    finetune_id = finetune_id.strip() or DEFAULT_FINETUNE_ID
+    return _FINETUNE_DIR_MAP.get(finetune_id, _FINETUNE_DIR_MAP[DEFAULT_FINETUNE_ID])
 
-    # 이미 로드된 경우(둘 다 있어야 함)
-    if model is not None and tokenizer is not None:
+
+# =========================================================
+# Base 모델 로딩 (1회)
+# =========================================================
+def _load_base_and_tokenizer_once():
+    global base_model, tokenizer
+
+    if base_model is not None and tokenizer is not None:
         return
 
+    ensure_hf_login()
+
+    print(f"[LLAMA_LOAD] base={BASE_MODEL_NAME}")
+
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=torch.bfloat16,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4",
+    )
+
+    base_model = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL_NAME,
+        quantization_config=quantization_config,
+        device_map="auto",
+        low_cpu_mem_usage=True,
+    )
+
+    # ✅ tokenizer는 base에서 로드 (LoRA 폴더에 tokenizer가 없을 수 있으니 안정적)
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        base_model.config.pad_token_id = tokenizer.eos_token_id
+
+
+# =========================================================
+# LoRA 어댑터 로딩/스위칭
+# =========================================================
+def load_model(finetune_id: str = DEFAULT_FINETUNE_ID):
+    """
+    ✅ Base(1회) + 선택 LoRA(요청마다 스위칭 가능) 로딩
+    - finetune_id가 바뀌면 기존 PeftModel을 폐기하고 새 adapter로 교체
+    """
+    global model, _current_finetune_id
+
     with _load_lock:
-        if model is not None and tokenizer is not None:
+        _load_base_and_tokenizer_once()
+
+        target_id = (finetune_id or DEFAULT_FINETUNE_ID).strip()
+        target_dir = _resolve_lora_dir(target_id)
+
+        # 이미 같은 finetune이면 스킵
+        if model is not None and _current_finetune_id == target_id:
             return
 
-        ensure_hf_login()
+        if not _lora_checkpoint_exists(target_dir):
+            raise RuntimeError(f"LoRA 체크포인트가 없습니다: {target_dir}")
 
-        print(f"[LLAMA_LOAD] base={BASE_MODEL_NAME}")
-        print(f"[LLAMA_LOAD] lora_dir={OUTPUT_LORA_DIR}")
+        # 기존 모델 정리(“종료” 의미: adapter 언로드 & 메모리 반환)
+        if model is not None:
+            try:
+                del model
+            except Exception:
+                pass
+            model = None
+            # CUDA 캐시 정리(과도하진 않지만 스위칭 시 VRAM 정리 도움)
+            try:
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+            except Exception:
+                pass
 
-        quantization_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type="nf4"
-        )
+        print(f"[LLAMA_LOAD] lora_dir={target_dir} (finetune_id={target_id})")
 
-        base_model = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL_NAME,
-            quantization_config=quantization_config,
-            device_map="auto",
-            low_cpu_mem_usage=True
-        )
-
-        # LoRA 어댑터 결합 (OUTPUT_LORA_DIR 사용)
-        if not _lora_checkpoint_exists(OUTPUT_LORA_DIR):
-            raise RuntimeError(f"LoRA 체크포인트가 없습니다: {OUTPUT_LORA_DIR}")
-
-        model = PeftModel.from_pretrained(base_model, OUTPUT_LORA_DIR)
+        # 새 LoRA 어댑터 결합
+        model = PeftModel.from_pretrained(base_model, target_dir)
         model.eval()
+        _current_finetune_id = target_id
 
-        # ✅ LoRA 적용 확인 로그 (핵심)
+        # ✅ LoRA 적용 확인 로그
         try:
-            # peft 버전에 따라 속성명이 조금 다를 수 있어 try로 안전 처리
             adapters = getattr(model, "peft_config", None)
             if adapters:
                 print(f"[LLAMA_LOAD] peft_adapters={list(adapters.keys())}")
@@ -216,12 +284,19 @@ def load_model():
         except Exception as e:
             print(f"[LLAMA_LOAD] peft_adapters=ERROR {repr(e)}")
 
-        tokenizer = AutoTokenizer.from_pretrained(OUTPUT_LORA_DIR)
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-            model.config.pad_token_id = tokenizer.eos_token_id
+        print("[LLAMA_LOAD] ✅ model ready (base+LoRA applied)")
 
-        print("[LLAMA_LOAD] ✅ model+tokenizer ready (base+LoRA applied)")
+
+def ensure_finetune_loaded(finetune_id: str):
+    """
+    요청 finetune_id가 현재 로드된 것과 다르면 스위칭.
+    """
+    target_id = (finetune_id or DEFAULT_FINETUNE_ID).strip() or DEFAULT_FINETUNE_ID
+    # 빠른 체크 (락 전)
+    if model is not None and _current_finetune_id == target_id:
+        return
+    # 락 걸고 스위칭
+    load_model(target_id)
 
 
 # =========================================================
@@ -261,8 +336,8 @@ def startup(async_init: bool = True):
         global _init_error
         try:
             ensure_hf_login()
-            maybe_finetune_lora()
-            load_model()
+            maybe_finetune_lora()  # ckpt_100만 “필요 시 학습”
+            load_model(DEFAULT_FINETUNE_ID)  # ✅ 부팅 기본 ckpt_100 유지
             _ready_event.set()
         except Exception as e:
             _init_error = e
@@ -284,7 +359,7 @@ def init_error():
 
 
 # =========================================================
-# ✅ create_app()에서 바로 부를 수 있는 "완전 동기" 프리로드/워밍업 함수
+# ✅ 동기 워밍업
 # =========================================================
 def warmup_model(
         do_warmup_generate: bool = True,
@@ -292,23 +367,18 @@ def warmup_model(
 ):
     """
     ✅ 서버 부팅 시 미리 로드하고 ready를 올려두는 용도.
-    - create_app()에서 warmup_model() 호출하면, views.py 수정 없이도 “첫 요청 지연”이 사라짐.
-    - 내부적으로: HF 로그인 → (옵션) 필요 시 LoRA 파인튜닝 → 모델 로드 → ready set
-    - do_warmup_generate=True면 아주 짧게 1토큰 생성해서 커널/캐시 워밍업까지 수행
     """
     global _init_error, _init_thread_started
 
-    # 다른 곳에서 async startup을 이미 호출했더라도, 여기서 동기 보장 가능
     with _init_lock:
-        _init_thread_started = True  # 중복 init 방지(의미상 "이미 init 경로 진입"으로 처리)
+        _init_thread_started = True
 
     try:
         ensure_hf_login()
         maybe_finetune_lora()
-        load_model()
+        load_model(DEFAULT_FINETUNE_ID)  # ✅ 부팅 기본 ckpt_100 유지
 
         if do_warmup_generate:
-            # 아주 작은 generate로 워밍업(동시 generate 락 재사용)
             prompt = "### System:\nYou are a helpful assistant.\n\n### Instruction:\n안녕\n\n### Response:\n"
             inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
@@ -317,7 +387,7 @@ def warmup_model(
                     **inputs,
                     max_new_tokens=max_new_tokens,
                     do_sample=False,
-                    eos_token_id=tokenizer.eos_token_id
+                    eos_token_id=tokenizer.eos_token_id,
                 )
 
         _ready_event.set()
@@ -325,7 +395,6 @@ def warmup_model(
 
     except Exception as e:
         _init_error = e
-        # ready는 세트하지 않음(뷰에서 timeout/에러 처리 가능)
         print("[WARMUP_ERROR]", repr(e))
         raise
 
@@ -336,6 +405,7 @@ def warmup_model(
 def generate_chat(
         chat_history,
         system_prompt,
+        finetune_id: str = DEFAULT_FINETUNE_ID,  # ✅ 추가: 요청 finetune_id
         temperature=0.7,
         top_p=0.9,
         top_k=50,
@@ -345,8 +415,8 @@ def generate_chat(
         wait_timeout_sec: int = 600,
 ):
     """
-    wait_ready=True면 모델 준비될 때까지 최대 wait_timeout_sec 대기.
-    False면 준비 안 됐을 때 즉시 예외 발생(views에서 503 처리하기 좋음)
+    ✅ 요청 finetune_id에 맞춰 LoRA를 자동 스위칭 후 generate.
+    - generate 도중 스위칭되는 걸 막기 위해 _generate_lock으로 보호.
     """
     if wait_ready:
         ok = _ready_event.wait(timeout=wait_timeout_sec)
@@ -356,22 +426,25 @@ def generate_chat(
         if not is_ready():
             raise RuntimeError("Model is not ready.")
 
-    # 모델/토크나이저는 이미 load 되어 있어야 함
-    prompt = build_prompt(chat_history, system_prompt)
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    # ✅ “generate 중” 스위칭 방지
+    with _generate_lock:
+        # 요청 finetune_id가 다르면 여기서 스위칭 (기존 로드 종료 → 새 로드)
+        ensure_finetune_loaded(finetune_id)
 
-    # 동시 generate 방지
-    with _generate_lock, torch.no_grad():
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=max_tokens,
-            temperature=temperature,
-            top_p=top_p,
-            top_k=top_k,
-            repetition_penalty=repetition_penalty,
-            do_sample=True,
-            eos_token_id=tokenizer.eos_token_id
-        )
+        prompt = build_prompt(chat_history, system_prompt)
+        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=max_tokens,
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k,
+                repetition_penalty=repetition_penalty,
+                do_sample=True,
+                eos_token_id=tokenizer.eos_token_id,
+            )
 
     decoded = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return decoded.split("### Response:")[-1].strip()
