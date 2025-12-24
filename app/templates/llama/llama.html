@@ -726,13 +726,12 @@
             title: "Checkpoint 50",
             badge: "step 50/100",
             recommended: true,
-            short: "동일 SFT run의 중간 스냅샷(global_step=50)",
+            short: "SFT run의 중간 스냅샷(global_step=50)",
             detail_kv: [
               { k: "Snapshot", v: "global_step=50 (max_steps=100, save_steps=50)" },
               { k: "Base",     v: "Meta-Llama-3-8B (4-bit NF4)" },
               { k: "PEFT",     v: "LoRA adapter-only (r=16, alpha=16)" },
               { k: "Objective",v: "completion-only loss (after ### Response)" },
-              { k: "Purpose",  v: "mid vs final A/B 비교용 스냅샷" },
             ],
           },
           {
@@ -740,14 +739,13 @@
             title: "Checkpoint 100",
             badge: "step 100/100",
             recommended: false,
-            short: "동일 SFT run의 최종 스냅샷(global_step=100, training end)",
+            short: "SFT run의 최종 스냅샷(global_step=100)",
             detail_kv: [
               { k: "Snapshot", v: "global_step=100 (training end)" },
-              { k: "Delta",    v: "ckpt_50과 동일 설정, step만 다름 (50 vs 100)" },
+              { k: "Diff",    v: "ckpt_50과 동일 설정, step만 다름 (50 vs 100)" },
               { k: "Base",     v: "Meta-Llama-3-8B (4-bit NF4)" },
               { k: "PEFT",     v: "LoRA adapter-only (r=16, alpha=16)" },
               { k: "Objective",v: "completion-only loss (after ### Response)" },
-              { k: "Purpose",  v: "final 결과 검증/비교 스냅샷" },
             ],
           }
         ];
