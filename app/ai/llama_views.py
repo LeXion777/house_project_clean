@@ -24,7 +24,46 @@ DEFAULT_PARAMS = {
 }
 
 # ✅ 디폴트 System Prompt
-DEFAULT_SYSTEM_PROMPT = ("You are a helpful assistant. Always reply in Korean unless the user explicitly asks you to use another language.")
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a helpful assistant. Always reply in Korean unless the user explicitly asks you to use another language."
+)
+
+# ✅ (추가) 디폴트 Fine-tuning 체크포인트
+DEFAULT_FINETUNE_ID = "ckpt_100"
+
+# ✅ (추가) Fine-tuning 프리셋(서버 제공용)
+# - UI는 이 값을 그대로 렌더링에 사용
+FINETUNE_PRESETS = [
+    {
+        "id": "ckpt_50",
+        "title": "Checkpoint 50",
+        "badge": "step 50/100",
+        "recommended": False,
+        "short": "동일 Instruction SFT(run) 중간 저장본 (global_step=50)",
+        "detail_kv": [
+            {"k": "Snapshot", "v": "global_step=50 (max_steps=100, save_steps=50)"},
+            {"k": "Training", "v": "Instruction SFT (Alpaca template)"},
+            {"k": "Base", "v": "Meta-Llama-3-8B (4-bit NF4)"},
+            {"k": "PEFT", "v": "LoRA (PEFT) adapter-only (r=16, alpha=16)"},
+            {"k": "Objective", "v": 'completion-only loss on Response span (after "### Response")'},
+        ],
+    },
+    {
+        "id": "ckpt_100",
+        "title": "Checkpoint 100",
+        "badge": "step 100/100",
+        "recommended": True,
+        "short": "동일 Instruction SFT(run) 최종 저장본 (global_step=100, training end)",
+        "detail_kv": [
+            {"k": "Snapshot", "v": "global_step=100 (training end)"},
+            {"k": "Diff", "v": "ckpt_50과 학습 설정 동일, 저장 step만 다름 (50 vs 100)"},
+            {"k": "Training", "v": "Instruction SFT (Alpaca template)"},
+            {"k": "Base", "v": "Meta-Llama-3-8B (4-bit NF4)"},
+            {"k": "PEFT", "v": "LoRA (PEFT) adapter-only (r=16, alpha=16)"},
+            {"k": "Objective", "v": 'completion-only loss on Response span (after "### Response")'},
+        ],
+    },
+]
 
 # ✅ 입력 검증/캐스팅용 스펙(서버 안전장치)
 _PARAM_SPECS = {
@@ -66,6 +105,15 @@ def _extract_request_config(data: dict):
     return sp, params
 
 
+def _sanitize_finetune_id(raw_id: str) -> str:
+    """UI에서 넘어온 finetune_id를 서버 목록 기준으로 검증."""
+    if not isinstance(raw_id, str):
+        return DEFAULT_FINETUNE_ID
+    raw_id = raw_id.strip()
+    allowed = {p["id"] for p in FINETUNE_PRESETS}
+    return raw_id if raw_id in allowed else DEFAULT_FINETUNE_ID
+
+
 @bp.route("/llama", methods=["GET", "POST"])
 def llama_chat():
     # ✅ 세션에는 "대화내역만"
@@ -88,16 +136,25 @@ def llama_chat():
 
         system_prompt, params = _extract_request_config(data)
 
+        # ✅ (추가) finetune_id 수신 (현재 generate_chat에는 미반영)
+        finetune_id = _sanitize_finetune_id(data.get("finetune_id", DEFAULT_FINETUNE_ID))
+        log.info("[SEND] finetune_id=%s", finetune_id)
+
         sp_preview = (system_prompt[:180] + "…") if len(system_prompt) > 180 else system_prompt
         log.info("[SEND] system_prompt=%r", sp_preview)
         log.info("[SEND] params=%s", params)
 
         session["chat_history"].append({"role": "user", "content": user_input})
 
+        # ⚠️ NOTE:
+        # 현재 generate_chat() 시그니처에 finetune_id가 없어서 여기서는 사용하지 않습니다.
+        # 추후 generate_chat이 finetune_id(체크포인트 경로/어댑터)를 지원하면 아래처럼 전달하면 됩니다.
+        # assistant_reply = generate_chat(session["chat_history"], system_prompt=system_prompt, finetune_id=finetune_id, **params)
+
         assistant_reply = generate_chat(
             session["chat_history"],
             system_prompt=system_prompt,
-            **params
+            **params,
         )
 
         session["chat_history"].append({"role": "assistant", "content": assistant_reply})
@@ -120,6 +177,10 @@ def llama_chat():
     return render_template(
         "llama/llama.html",
         chat_history=session.get("chat_history", []),
+
+        # ✅ Fine-tuning 프리셋 + 디폴트(ckpt_100)
+        finetune_presets=FINETUNE_PRESETS,
+        default_finetune_id=DEFAULT_FINETUNE_ID,
 
         # ✅ 새 템플릿 변수명(이번에 사용하는 이름)
         default_params=DEFAULT_PARAMS,
