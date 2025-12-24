@@ -679,18 +679,27 @@
           {
             id: "ckpt_50",
             title: "Checkpoint 50",
-            badge: "균형형",
-            recommended: true,
-            short: "일반 대화/설명에 무난한 프리셋",
-            detail: "대화 품질과 지시 이행의 균형을 목표로 한 설정입니다. (다음 메시지부터 적용)"
+            badge: "step 50/100",
+            recommended: false,
+            short: "동일 SFT run의 중간 스냅샷(global_step=50)",
+            detail: [
+              "동일한 SFT 학습(run)에서 global_step=50 시점에 저장된 체크포인트입니다. (max_steps=100, save_steps=50)",
+              "학습 구성: Meta-Llama-3-8B + 4-bit(NF4) + PEFT LoRA(adapter-only, r=16/alpha=16) + completion-only loss(### Response 이후 구간만 학습).",
+              "제공 목적: 학습 진행도(step)에 따른 결과 차이를 A/B 비교할 수 있도록 중간 스냅샷을 노출했습니다.",
+            ].join(" ")
           },
           {
             id: "ckpt_100",
             title: "Checkpoint 100",
-            badge: "강화형",
-            recommended: false,
-            short: "형식 준수/지시 이행을 더 강화한 프리셋",
-            detail: "요구사항을 더 엄격히 따르는 성향이 필요할 때 유리합니다. (다음 메시지부터 적용)"
+            badge: "step 100/100",
+            recommended: true,
+            short: "동일 SFT run의 최종 스냅샷(global_step=100, training end)",
+            detail: [
+              "동일한 SFT 학습(run)에서 global_step=100(학습 종료) 시점에 저장된 체크포인트입니다.",
+              "ckpt_50과 데이터/하이퍼파라미터는 동일하며, 저장 시점(step)만 다릅니다(50 vs 100).",
+              "학습 구성: Meta-Llama-3-8B + 4-bit(NF4) + PEFT LoRA(adapter-only, r=16/alpha=16) + completion-only loss(### Response 이후 구간만 학습).",
+              "제공 목적: 중간(step 50) 대비 최종(step 100) 결과를 동일 조건에서 비교/검증할 수 있도록 최종 스냅샷을 제공합니다.",
+            ].join(" ")
           }
         ];
 
