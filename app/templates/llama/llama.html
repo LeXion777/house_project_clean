@@ -661,6 +661,55 @@
           .app{ grid-template-columns: 1fr; }
           .settings{ display:none; }
         }
+
+        .finetune-detail{
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px dashed rgba(148,163,184,0.22);
+
+          display: grid;
+          gap: 8px;
+
+          font-size: 12.5px;
+          line-height: 1.45;
+          font-weight: 750;
+          color: rgba(229,231,235,0.92);
+
+          max-height: 140px;     /* ✅ 너무 길어지면 */
+          overflow: auto;        /* ✅ 내부 스크롤 */
+          padding-right: 6px;
+        }
+
+        .ft-row{
+          display: grid;
+          grid-template-columns: 92px 1fr; /* ✅ key 폭 고정 */
+          gap: 10px;
+          align-items: start;
+        }
+
+        .ft-k{
+          color: var(--muted);
+          font-weight: 900;
+          font-size: 12px;
+          letter-spacing: -0.1px;
+        }
+
+        .ft-v{
+          color: rgba(229,231,235,0.95);
+          word-break: break-word;
+        }
+
+        .ft-code{
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+          font-size: 12px;
+          padding: 2px 6px;
+          border-radius: 8px;
+          border: 1px solid rgba(148,163,184,0.22);
+          background: rgba(15,23,42,0.35);
+          color: rgba(229,231,235,0.95);
+          white-space: nowrap;
+        }
+
     </style>
 
     <script>
@@ -680,26 +729,30 @@
             id: "ckpt_50",
             title: "Checkpoint 50",
             badge: "step 50/100",
-            recommended: false,
+            recommended: true,
             short: "동일 SFT run의 중간 스냅샷(global_step=50)",
-            detail: [
-              "동일한 SFT 학습(run)에서 global_step=50 시점에 저장된 체크포인트입니다. (max_steps=100, save_steps=50)",
-              "학습 구성: Meta-Llama-3-8B + 4-bit(NF4) + PEFT LoRA(adapter-only, r=16/alpha=16) + completion-only loss(### Response 이후 구간만 학습).",
-              "제공 목적: 학습 진행도(step)에 따른 결과 차이를 A/B 비교할 수 있도록 중간 스냅샷을 노출했습니다.",
-            ].join(" ")
+            detail_kv: [
+              { k: "Snapshot", v: "global_step=50 (max_steps=100, save_steps=50)" },
+              { k: "Base",     v: "Meta-Llama-3-8B (4-bit NF4)" },
+              { k: "PEFT",     v: "LoRA adapter-only (r=16, alpha=16)" },
+              { k: "Objective",v: "completion-only loss (after ### Response)" },
+              { k: "Purpose",  v: "mid vs final A/B 비교용 스냅샷" },
+            ],
           },
           {
             id: "ckpt_100",
             title: "Checkpoint 100",
             badge: "step 100/100",
-            recommended: true,
+            recommended: false,
             short: "동일 SFT run의 최종 스냅샷(global_step=100, training end)",
-            detail: [
-              "동일한 SFT 학습(run)에서 global_step=100(학습 종료) 시점에 저장된 체크포인트입니다.",
-              "ckpt_50과 데이터/하이퍼파라미터는 동일하며, 저장 시점(step)만 다릅니다(50 vs 100).",
-              "학습 구성: Meta-Llama-3-8B + 4-bit(NF4) + PEFT LoRA(adapter-only, r=16/alpha=16) + completion-only loss(### Response 이후 구간만 학습).",
-              "제공 목적: 중간(step 50) 대비 최종(step 100) 결과를 동일 조건에서 비교/검증할 수 있도록 최종 스냅샷을 제공합니다.",
-            ].join(" ")
+            detail_kv: [
+              { k: "Snapshot", v: "global_step=100 (training end)" },
+              { k: "Delta",    v: "ckpt_50과 동일 설정, step만 다름 (50 vs 100)" },
+              { k: "Base",     v: "Meta-Llama-3-8B (4-bit NF4)" },
+              { k: "PEFT",     v: "LoRA adapter-only (r=16, alpha=16)" },
+              { k: "Objective",v: "completion-only loss (after ### Response)" },
+              { k: "Purpose",  v: "final 결과 검증/비교 스냅샷" },
+            ],
           }
         ];
 
@@ -855,7 +908,14 @@
               </div>
 
               <div id="${detailId}" class="collapse">
-                <div class="finetune-detail">${p.detail || ""}</div>
+                <div class="finetune-detail">
+                  ${Array.isArray(p.detail_kv) ? p.detail_kv.map(row => `
+                    <div class="ft-row">
+                      <div class="ft-k">${row.k}</div>
+                      <div class="ft-v">${formatDetailValue(row.v)}</div>
+                    </div>
+                  `).join("") : ""}
+                </div>
               </div>
             `;
 
@@ -1105,6 +1165,17 @@
             if (overlay.style.display === "flex") e.preventDefault();
           }, { capture: true });
         });
+
+        function formatDetailValue(v){
+          const s = String(v ?? "");
+          // 괄호/등호 포함된 구간은 살짝 code 느낌으로 보여주기(과하면 지저분해지니 최소만)
+          return s
+            .replace(/\b(global_step=\d+)\b/g, "<span class='ft-code'>$1</span>")
+            .replace(/\b(max_steps=\d+)\b/g, "<span class='ft-code'>$1</span>")
+            .replace(/\b(save_steps=\d+)\b/g, "<span class='ft-code'>$1</span>")
+            .replace(/\b(4-bit NF4)\b/g, "<span class='ft-code'>$1</span>")
+            .replace(/\b(LoRA)\b/g, "<span class='ft-code'>$1</span>");
+        }
     </script>
 </head>
 
