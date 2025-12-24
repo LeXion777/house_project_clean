@@ -443,6 +443,141 @@
           backdrop-filter: blur(10px);
         }
 
+        /* ===== Fine-tuning Preset UI ===== */
+        .finetune-wrap{
+          margin-top: 14px;
+          margin-bottom: 16px;
+        }
+        .finetune-head{
+          display:flex;
+          align-items:flex-end;
+          justify-content:space-between;
+          gap:10px;
+          margin-bottom: 10px;
+        }
+        .finetune-sub{
+          font-size: 12px;
+          color: var(--muted);
+          font-weight: 750;
+          line-height: 1.25;
+          text-align: right;
+        }
+        .finetune-grid{
+          display:grid;
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        .finetune-card{
+          position: relative;
+          background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          padding: 12px 12px 10px;
+          cursor: pointer;
+          box-shadow: 0 12px 28px rgba(0,0,0,0.16);
+          transition: transform .12s ease, border-color .12s ease, filter .12s ease;
+          user-select: none;
+        }
+        .finetune-card:hover{
+          transform: translateY(-1px);
+          filter: brightness(1.02);
+        }
+        .finetune-card.selected{
+          border-color: rgba(255,107,0,0.55);
+          box-shadow:
+            0 14px 34px rgba(255,107,0,0.10),
+            0 0 0 4px rgba(255,107,0,0.12);
+        }
+        .finetune-top{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:10px;
+          margin-bottom: 6px;
+        }
+        .finetune-title{
+          font-weight: 950;
+          letter-spacing: -0.2px;
+          display:flex;
+          align-items:center;
+          gap:8px;
+          min-width: 0;
+        }
+        .finetune-title span:first-child{
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 220px;
+        }
+        .finetune-title .pill{
+          font-size: 11px;
+          font-weight: 950;
+          padding: 4px 8px;
+          border-radius: 999px;
+          border: 1px solid rgba(59,130,246,0.25);
+          background: rgba(59,130,246,0.10);
+          color: #cfe3ff;
+          white-space: nowrap;
+        }
+        .finetune-title .pill.rec{
+          border: 1px solid rgba(255,107,0,0.30);
+          background: rgba(255,107,0,0.10);
+          color: #ffd7bf;
+        }
+        .finetune-short{
+          font-size: 13px;
+          color: var(--text);
+          font-weight: 800;
+          line-height: 1.45;
+        }
+        .finetune-actions{
+          margin-top: 8px;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:10px;
+        }
+        .finetune-more{
+          font-size: 12px;
+          color: var(--muted);
+          font-weight: 850;
+          text-decoration: underline;
+          cursor: pointer;
+          user-select:none;
+          background: transparent;
+          border: none;
+          padding: 0;
+        }
+        .finetune-radio{
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          border-radius: 999px;
+          border: 2px solid rgba(148,163,184,0.65);
+          display:inline-block;
+          position: relative;
+          flex: 0 0 auto;
+        }
+        .finetune-card.selected .finetune-radio{
+          border-color: rgba(255,107,0,0.85);
+        }
+        .finetune-card.selected .finetune-radio::after{
+          content:"";
+          position:absolute;
+          inset: 3px;
+          border-radius: 999px;
+          background: rgba(255,107,0,0.95);
+        }
+        .finetune-detail{
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px dashed rgba(148,163,184,0.22);
+          color: rgba(229,231,235,0.92);
+          font-size: 12.5px;
+          line-height: 1.55;
+          font-weight: 750;
+        }
+
         /* ======================================
            ✅ 전월세 지도 페이지 전용 네비게이션바 CSS (공용) - 수정 금지
         ====================================== */
@@ -505,9 +640,40 @@
         const DEFAULT_PRESET = {{ (default_params if default_params is defined else (params if params is defined else {})) | tojson }};
         const DEFAULT_SYSTEM_PROMPT = {{ (default_system_prompt if default_system_prompt is defined else (system_prompt if system_prompt is defined else "")) | tojson }};
 
+        // ✅ Fine-tuning presets (서버에서 주면 그걸 쓰고, 없으면 fallback 사용)
+        // server expected:
+        // finetune_presets: [{id,title,badge,recommended,short,detail}, ...]
+        // default_finetune_id: "ckpt_50" 등
+        const SERVER_FINETUNE_PRESETS = {{ (finetune_presets if finetune_presets is defined else []) | tojson }};
+        const DEFAULT_FINETUNE_ID = {{ (default_finetune_id if default_finetune_id is defined else "") | tojson }};
+
+        const FALLBACK_FINETUNE_PRESETS = [
+          {
+            id: "ckpt_50",
+            title: "Checkpoint 50",
+            badge: "균형형",
+            recommended: true,
+            short: "일반 대화/설명에 무난한 프리셋",
+            detail: "대화 품질과 지시 이행의 균형을 목표로 한 설정입니다. (다음 메시지부터 적용)"
+          },
+          {
+            id: "ckpt_100",
+            title: "Checkpoint 100",
+            badge: "강화형",
+            recommended: false,
+            short: "형식 준수/지시 이행을 더 강화한 프리셋",
+            detail: "요구사항을 더 엄격히 따르는 성향이 필요할 때 유리합니다. (다음 메시지부터 적용)"
+          }
+        ];
+
+        const FINETUNE_PRESETS = (Array.isArray(SERVER_FINETUNE_PRESETS) && SERVER_FINETUNE_PRESETS.length)
+          ? SERVER_FINETUNE_PRESETS
+          : FALLBACK_FINETUNE_PRESETS;
+
         // ✅ 클라에서만 유지되는 "현재 적용중" 값(쿠키/세션 저장 X)
         let appliedSystemPrompt = DEFAULT_SYSTEM_PROMPT;
         let appliedParams = { ...DEFAULT_PRESET };
+        let appliedFinetuneId = DEFAULT_FINETUNE_ID || (FINETUNE_PRESETS[0] ? FINETUNE_PRESETS[0].id : "");
 
         const PARAM_SPECS = {
           temperature: {type: "float", min: 0.0, max: 2.0},
@@ -603,6 +769,66 @@
           return t.length > n ? (t.slice(0, n) + "…") : t;
         }
 
+        function finetuneLabelById(id){
+          const x = FINETUNE_PRESETS.find(p => p.id === id);
+          if(!x) return id || "(미선택)";
+          const badge = x.badge ? ` · ${x.badge}` : "";
+          return `${x.title}${badge}`;
+        }
+
+        function setSelectedFinetune(id){
+          const hidden = document.getElementById("finetuneInput");
+          if(hidden) hidden.value = id;
+
+          const cards = document.querySelectorAll(".finetune-card");
+          cards.forEach(c => c.classList.toggle("selected", c.dataset.id === id));
+        }
+
+        function renderFinetuneCards(selectedId){
+          const grid = document.getElementById("finetuneGrid");
+          if(!grid) return;
+
+          grid.innerHTML = "";
+
+          FINETUNE_PRESETS.forEach((p, idx) => {
+            const card = document.createElement("div");
+            card.className = "finetune-card" + (p.id === selectedId ? " selected" : "");
+            card.dataset.id = p.id;
+
+            const pillClass = p.recommended ? "pill rec" : "pill";
+            const pillText = p.badge || (p.recommended ? "추천" : "프리셋");
+            const detailId = `ft_detail_${idx}`;
+
+            card.innerHTML = `
+              <div class="finetune-top">
+                <div class="finetune-title">
+                  <span title="${(p.title || "").replace(/"/g, "&quot;")}">${p.title || ""}</span>
+                  <span class="${pillClass}">${pillText}</span>
+                </div>
+                <span class="finetune-radio" aria-hidden="true"></span>
+              </div>
+
+              <div class="finetune-short">${p.short || ""}</div>
+
+              <div class="finetune-actions">
+                <button type="button" class="finetune-more" data-bs-toggle="collapse" data-bs-target="#${detailId}">
+                  상세 보기
+                </button>
+                <span style="font-size:12px; color: var(--muted); font-weight:800;">ID: ${p.id}</span>
+              </div>
+
+              <div id="${detailId}" class="collapse">
+                <div class="finetune-detail">${p.detail || ""}</div>
+              </div>
+            `;
+
+            // 카드 클릭으로 선택. 단, 상세보기 버튼 클릭은 선택도 같이 되도록(UX)
+            card.addEventListener("click", () => setSelectedFinetune(p.id));
+
+            grid.appendChild(card);
+          });
+        }
+
         function renderAppliedPanel(){
           // badge
           const badge = document.getElementById("appliedBadge");
@@ -611,6 +837,10 @@
           // system prompt preview
           const sp = document.getElementById("appliedPrompt");
           if (sp) sp.textContent = promptPreview(appliedSystemPrompt, 160);
+
+          // finetune
+          const ft = document.getElementById("appliedFinetune");
+          if (ft) ft.textContent = finetuneLabelById(appliedFinetuneId);
 
           // params
           const setKV = (id, v) => {
@@ -629,6 +859,9 @@
           const spRaw = spInput ? spInput.value : "";
           const sp = (spRaw || "").trim() || DEFAULT_SYSTEM_PROMPT;
 
+          const ftHidden = document.getElementById("finetuneInput");
+          const finetune_id = (ftHidden && ftHidden.value) ? ftHidden.value : appliedFinetuneId;
+
           const getNum = (id) => {
             const el = document.getElementById(id);
             return el ? el.value : "";
@@ -642,7 +875,7 @@
             repetition_penalty: coerceInput("repetition_penalty", getNum("repetition_penalty_num")),
           };
 
-          return { system_prompt: sp, params };
+          return { system_prompt: sp, finetune_id, params };
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -666,6 +899,10 @@
           const max_tokens_num = document.getElementById("max_tokens_num");
           const repetition_penalty = document.getElementById("repetition_penalty");
           const repetition_penalty_num = document.getElementById("repetition_penalty_num");
+
+          // ✅ Fine-tuning cards init (입력값으로만 세팅)
+          renderFinetuneCards(appliedFinetuneId);
+          setSelectedFinetune(appliedFinetuneId);
 
           // 초기 "적용중"은 디폴트
           appliedSystemPrompt = DEFAULT_SYSTEM_PROMPT;
@@ -722,6 +959,7 @@
                 body: JSON.stringify({
                   prompt: text,
                   system_prompt: appliedSystemPrompt,
+                  finetune_id: appliedFinetuneId,
                   ...appliedParams
                 })
               });
@@ -788,7 +1026,7 @@
           bindRangeNumber(max_tokens, max_tokens_num);
           bindRangeNumber(repetition_penalty, repetition_penalty_num);
 
-          // ✅ Reset Params: "입력값만" 디폴트로 + system prompt 입력도 디폴트로 (적용은 Apply)
+          // ✅ Reset Params: "입력값만" 디폴트로 + system prompt 입력도 디폴트로 + finetune 입력도 디폴트로 (적용은 Apply)
           const resetParamsBtn = document.getElementById("resetParams");
           resetParamsBtn.addEventListener("click", () => {
             setParam("temperature", DEFAULT_PRESET.temperature);
@@ -798,6 +1036,10 @@
             setParam("repetition_penalty", DEFAULT_PRESET.repetition_penalty);
 
             if (systemPromptInput) systemPromptInput.value = DEFAULT_SYSTEM_PROMPT;
+
+            // finetune input reset (UI만, 적용은 Apply)
+            const defFt = DEFAULT_FINETUNE_ID || (FINETUNE_PRESETS[0] ? FINETUNE_PRESETS[0].id : "");
+            if(defFt) setSelectedFinetune(defFt);
           });
 
           // ✅ Apply: 서버에 저장/전송 X, 클라 "적용중"만 갱신 + 현황판 업데이트
@@ -810,6 +1052,7 @@
             const cfg = readInputsToConfig();
             appliedSystemPrompt = cfg.system_prompt;
             appliedParams = { ...cfg.params };
+            appliedFinetuneId = cfg.finetune_id;
 
             renderAppliedPanel();
 
@@ -908,6 +1151,13 @@
                 </div>
 
                 <div class="status-row">
+                    <div class="status-label">Fine-tuning</div>
+                    <div class="status-value">
+                        <span id="appliedFinetune" class="status-ellipsis"></span>
+                    </div>
+                </div>
+
+                <div class="status-row">
                     <div class="status-label">System Prompt</div>
                     <div class="status-value">
                         <span id="appliedPrompt" class="status-ellipsis"></span>
@@ -936,6 +1186,17 @@
                         <div class="v" id="applied_repetition_penalty">-</div>
                     </div>
                 </div>
+            </div>
+
+            <!-- ✅ Fine-tuning Preset -->
+            <div class="finetune-wrap">
+                <div class="finetune-head">
+                    <h3 style="margin:0;">Fine-tuning</h3>
+                    <div class="finetune-sub">체크포인트(프리셋)를 선택하세요<br/>변경은 다음 메시지부터 적용</div>
+                </div>
+
+                <div id="finetuneGrid" class="finetune-grid"></div>
+                <input type="hidden" id="finetuneInput" name="finetune_id" value="">
             </div>
 
             <h3>System Prompt</h3>
@@ -991,10 +1252,7 @@
             </div>
 
             <!-- ✅ Apply는 서버 저장 X: JS가 submit을 막고 '적용중'만 갱신 -->
-            <button type="button" id="resetParams"
-                    style="width:100%; padding:10px; border-radius:8px;
-                     border:1px solid #1e293b; background:#334155;
-                     color:white; cursor:pointer; margin-top:12px;">
+            <button type="button" id="resetParams">
                 Reset to Default
             </button>
 
