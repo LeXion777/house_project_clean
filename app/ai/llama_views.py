@@ -1,7 +1,7 @@
 # llama_views.py
 import logging
 from flask import Blueprint, render_template, request, session, jsonify, redirect, url_for
-from .llama_model import generate_chat  # ✅ generate_chat이 finetune_id 지원
+from .llama_model import generate_chat  # generate_chat이 finetune_id 지원
 
 bp = Blueprint("llama", __name__)
 
@@ -25,7 +25,7 @@ DEFAULT_SYSTEM_PROMPT = (
     "You are a helpful assistant. Always reply in Korean unless the user explicitly asks you to use another language."
 )
 
-# ✅ 디폴트 Fine-tuning 체크포인트 (부팅 기본값: ckpt_100 유지)
+# 디폴트 Fine-tuning 체크포인트 (부팅 기본값: ckpt_100 유지)
 DEFAULT_FINETUNE_ID = "ckpt_100"
 
 FINETUNE_PRESETS = [
@@ -135,7 +135,7 @@ def llama_chat():
 
         session["chat_history"].append({"role": "user", "content": user_input})
 
-        # ✅ 여기서 finetune_id 전달 → llama_model.py가 필요 시 스위칭 로드
+        # 여기서 finetune_id 전달 → llama_model.py가 필요 시 스위칭 로드
         assistant_reply = generate_chat(
             session["chat_history"],
             system_prompt=system_prompt,

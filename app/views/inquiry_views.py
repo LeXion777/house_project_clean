@@ -5,7 +5,7 @@ from datetime import datetime
 from werkzeug.utils import redirect
 from .. import db
 
-# ✅ Blueprint 이름을 'inquiry'로 수정
+# Blueprint 이름을 'inquiry'로 수정
 bp = Blueprint('inquiry', __name__, url_prefix='/inquiry')
 
 # 문의 메인 (필요 시 제거 가능)
@@ -68,7 +68,7 @@ def create():
         db.session.add(question)
         db.session.commit()
 
-        # ✅ 수정: inquiry._list로 정확하게 연결
+        # 수정: inquiry._list로 정확하게 연결
         return redirect(url_for('inquiry._list'))
 
     return render_template('inquiry/inquiry_form.html', form=form)
@@ -83,7 +83,7 @@ def q_answer(question_id):
         answer = Answer(content=content, create_date=datetime.now())
         question.answer_set.append(answer)
         db.session.commit()
-        # ✅ 수정: detail로 정확히 연결
+        # 수정: detail로 정확히 연결
         return redirect(url_for('inquiry.detail', question_id=question_id))
 
     return render_template('inquiry/inquiry_detail.html', question=question, form=form)
