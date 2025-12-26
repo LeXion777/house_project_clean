@@ -17,6 +17,20 @@ os.makedirs("/workspace/hf_cache", exist_ok=True)
 os.makedirs("/workspace/tmp", exist_ok=True)
 
 # =========================================================
+# Context logging controls
+# =========================================================
+# 0: off, 1: compact(default), 2: verbose
+_CTX_LOG_LEVEL = int(os.getenv("LLAMA_CTX_LOG", "1"))
+# how many recent messages to show in terminal
+_CTX_LOG_LAST_N = int(os.getenv("LLAMA_CTX_LOG_LAST_N", "6"))
+# preview chars for each message line
+_CTX_LOG_MSG_PREVIEW = int(os.getenv("LLAMA_CTX_LOG_MSG_PREVIEW", "180"))
+# preview chars for prompt head/tail
+_CTX_LOG_PROMPT_PREVIEW = int(os.getenv("LLAMA_CTX_LOG_PROMPT_PREVIEW", "700"))
+# if set, print full prompt (NOT recommended)
+_CTX_LOG_FULL = os.getenv("LLAMA_CTX_LOG_FULL", "0").strip() in ("1", "true", "True", "yes", "Y")
+
+# =========================================================
 # Imports
 # =========================================================
 import torch
@@ -83,6 +97,61 @@ _ready_event = threading.Event()
 _init_error = None
 _init_thread_started = False
 _init_lock = threading.Lock()
+
+
+# =========================================================
+# Small helpers for context logging
+# =========================================================
+def _one_line(s: str) -> str:
+    return " ".join((s or "").replace("\r", "\n").split())
+
+
+def _preview(s: str, n: int) -> str:
+    s = _one_line(s)
+    return s if len(s) <= n else (s[:n] + "…")
+
+
+def _log_context(chat_history: List[Dict[str, str]], system_prompt: str, prompt: str, input_len: int):
+    """
+    터미널에 '이번 요청에서 사용된 컨텍스트'를 사람이 보기 쉽게 출력.
+    """
+    if _CTX_LOG_LEVEL <= 0:
+        return
+
+    try:
+        total_msgs = len(chat_history or [])
+        sys_prev = _preview(system_prompt or "", 220)
+
+        print(f"[LLAMA_CTX] system_prompt='{sys_prev}'")
+        print(f"[LLAMA_CTX] history_messages={total_msgs}, input_tokens={input_len}")
+
+        # last N messages preview
+        last_n = max(0, _CTX_LOG_LAST_N)
+        if last_n > 0 and total_msgs > 0:
+            slice_msgs = (chat_history or [])[-last_n:]
+            print(f"[LLAMA_CTX] last_{len(slice_msgs)}_messages:")
+            for i, m in enumerate(slice_msgs, 1):
+                role = m.get("role", "?")
+                content = m.get("content", "")
+                print(f"  - {i:02d}. {role}: {_preview(str(content), _CTX_LOG_MSG_PREVIEW)}")
+
+        # prompt preview
+        if _CTX_LOG_FULL:
+            print("[LLAMA_CTX] prompt_full_begin")
+            print(prompt)
+            print("[LLAMA_CTX] prompt_full_end")
+        else:
+            prev_len = _CTX_LOG_PROMPT_PREVIEW if _CTX_LOG_LEVEL >= 2 else min(_CTX_LOG_PROMPT_PREVIEW, 450)
+            head = prompt[:prev_len]
+            tail = prompt[-prev_len:] if len(prompt) > prev_len else ""
+            print("[LLAMA_CTX] prompt_head_preview:")
+            print(head)
+            if tail:
+                print("[LLAMA_CTX] prompt_tail_preview:")
+                print(tail)
+
+    except Exception as e:
+        print(f"[LLAMA_CTX] (log failed) {repr(e)}")
 
 
 # =========================================================
@@ -342,11 +411,10 @@ def _postprocess_alpaca_reply(text: str) -> str:
     if not text:
         return ""
 
-    # 다음 턴 마커가 나오면 그 앞까지만
     stop_markers = [
         "\n### Instruction:",
         "\n### System:",
-        "\n### Response:",  # 혹시 중복 생성 시
+        "\n### Response:",
     ]
     cut = None
     for m in stop_markers:
@@ -364,10 +432,6 @@ def _postprocess_alpaca_reply(text: str) -> str:
 # 서버 부팅 시 초기화 시작 (스레드)
 # =========================================================
 def startup(async_init: bool = True):
-    """
-    Flask가 올라올 때 한 번 호출해주면 됨.
-    async_init=True면 서버는 바로 뜨고, 모델 준비는 백그라운드에서 진행.
-    """
     global _init_thread_started
 
     with _init_lock:
@@ -379,8 +443,8 @@ def startup(async_init: bool = True):
         global _init_error
         try:
             ensure_hf_login()
-            maybe_finetune_lora()  # ckpt_100만 “필요 시 학습”
-            load_model(DEFAULT_FINETUNE_ID)  # 부팅 기본 ckpt_100 유지
+            maybe_finetune_lora()
+            load_model(DEFAULT_FINETUNE_ID)
             _ready_event.set()
         except Exception as e:
             _init_error = e
@@ -408,9 +472,6 @@ def warmup_model(
         do_warmup_generate: bool = True,
         max_new_tokens: int = 1,
 ):
-    """
-    서버 부팅 시 미리 로드하고 ready를 올려두는 용도.
-    """
     global _init_error, _init_thread_started
 
     with _init_lock:
@@ -419,7 +480,7 @@ def warmup_model(
     try:
         ensure_hf_login()
         maybe_finetune_lora()
-        load_model(DEFAULT_FINETUNE_ID)  # 부팅 기본 ckpt_100 유지
+        load_model(DEFAULT_FINETUNE_ID)
 
         if do_warmup_generate:
             prompt = "### System:\nYou are a helpful assistant.\n\n### Instruction:\n안녕\n\n### Response:\n"
@@ -458,12 +519,6 @@ def generate_chat(
         wait_ready: bool = True,
         wait_timeout_sec: int = 600,
 ):
-    """
-    요청 finetune_id에 맞춰 LoRA를 자동 스위칭 후 generate.
-    - generate 도중 스위칭되는 걸 막기 위해 _generate_lock으로 보호.
-    - chat_history(컨텍스트)를 build_prompt에 그대로 넣기 때문에
-      view에서 넘겨준 대화내역이 LLM 컨텍스트로 반영된다.
-    """
     if wait_ready:
         ok = _ready_event.wait(timeout=wait_timeout_sec)
         if not ok:
@@ -486,9 +541,11 @@ def generate_chat(
 
         prompt = build_prompt(chat_history, system_prompt)
 
-        # 입력 토큰화
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
         input_len = inputs["input_ids"].shape[-1]
+
+        # ✅ 여기서 "이번 요청에 실제 반영된 컨텍스트" 로그 출력
+        _log_context(chat_history=chat_history, system_prompt=system_prompt, prompt=prompt, input_len=input_len)
 
         with torch.no_grad():
             outputs = model.generate(
@@ -503,7 +560,6 @@ def generate_chat(
                 pad_token_id=tokenizer.pad_token_id,
             )
 
-        # 안정적인 답변 추출: "입력 이후 생성된 새 토큰"만 디코딩
         gen_ids = outputs[0][input_len:]
         reply = tokenizer.decode(gen_ids, skip_special_tokens=True)
 
