@@ -3,6 +3,7 @@ import os
 import time
 import threading
 import subprocess
+from typing import Any, Dict, List
 
 # =========================================================
 # RunPod 필수: Hugging Face 캐시 / TMP 경로 강제 고정
@@ -225,9 +226,15 @@ def _load_base_and_tokenizer_once():
 
     # tokenizer는 base에서 로드 (LoRA 폴더에 tokenizer가 없을 수 있으니 안정적)
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME)
+
+    # pad 토큰 보강
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+
+    try:
         base_model.config.pad_token_id = tokenizer.eos_token_id
+    except Exception:
+        pass
 
 
 # =========================================================
@@ -260,7 +267,6 @@ def load_model(finetune_id: str = DEFAULT_FINETUNE_ID):
             except Exception:
                 pass
             model = None
-            # CUDA 캐시 정리(과도하진 않지만 스위칭 시 VRAM 정리 도움)
             try:
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
@@ -292,29 +298,66 @@ def ensure_finetune_loaded(finetune_id: str):
     요청 finetune_id가 현재 로드된 것과 다르면 스위칭.
     """
     target_id = (finetune_id or DEFAULT_FINETUNE_ID).strip() or DEFAULT_FINETUNE_ID
-    # 빠른 체크 (락 전)
     if model is not None and _current_finetune_id == target_id:
         return
-    # 락 걸고 스위칭
     load_model(target_id)
 
 
 # =========================================================
 # Prompt 구성 (Alpaca 학습 포맷과 호환)
 # =========================================================
-def build_prompt(chat_history, system_prompt):
+def build_prompt(chat_history: List[Dict[str, str]], system_prompt: str) -> str:
+    """
+    chat_history: [{"role":"user"|"assistant","content":"..."}] (여러 턴)
+    Alpaca 스타일(Instruction/Response)을 여러 번 반복하는 형태로 구성.
+    """
+    sp = (system_prompt or "").strip()
     prompt = f"""### System:
-{system_prompt}
+{sp}
 """
-    for msg in chat_history:
-        role = msg["role"]
-        content = msg["content"]
+
+    for msg in (chat_history or []):
+        role = msg.get("role")
+        content = msg.get("content")
+        if not isinstance(content, str):
+            content = str(content)
+        content = content.strip()
+        if not content:
+            continue
+
         if role == "user":
             prompt += f"\n### Instruction:\n{content}\n"
         elif role == "assistant":
             prompt += f"\n### Response:\n{content}\n"
+
+    # 마지막에 모델이 이어서 답하도록 Response 헤더로 끝냄
     prompt += "\n### Response:\n"
     return prompt
+
+
+def _postprocess_alpaca_reply(text: str) -> str:
+    """
+    모델이 다음 턴(### Instruction / ### System 등)까지 생성해버릴 때 컷.
+    """
+    if not text:
+        return ""
+
+    # 다음 턴 마커가 나오면 그 앞까지만
+    stop_markers = [
+        "\n### Instruction:",
+        "\n### System:",
+        "\n### Response:",  # 혹시 중복 생성 시
+    ]
+    cut = None
+    for m in stop_markers:
+        idx = text.find(m)
+        if idx != -1:
+            cut = idx if cut is None else min(cut, idx)
+
+    if cut is not None:
+        text = text[:cut]
+
+    return text.strip()
 
 
 # =========================================================
@@ -388,6 +431,7 @@ def warmup_model(
                     max_new_tokens=max_new_tokens,
                     do_sample=False,
                     eos_token_id=tokenizer.eos_token_id,
+                    pad_token_id=tokenizer.pad_token_id,
                 )
 
         _ready_event.set()
@@ -405,7 +449,7 @@ def warmup_model(
 def generate_chat(
         chat_history,
         system_prompt,
-        finetune_id: str = DEFAULT_FINETUNE_ID,  # 추가: 요청 finetune_id
+        finetune_id: str = DEFAULT_FINETUNE_ID,
         temperature=0.7,
         top_p=0.9,
         top_k=50,
@@ -417,6 +461,8 @@ def generate_chat(
     """
     요청 finetune_id에 맞춰 LoRA를 자동 스위칭 후 generate.
     - generate 도중 스위칭되는 걸 막기 위해 _generate_lock으로 보호.
+    - chat_history(컨텍스트)를 build_prompt에 그대로 넣기 때문에
+      view에서 넘겨준 대화내역이 LLM 컨텍스트로 반영된다.
     """
     if wait_ready:
         ok = _ready_event.wait(timeout=wait_timeout_sec)
@@ -426,40 +472,39 @@ def generate_chat(
         if not is_ready():
             raise RuntimeError("Model is not ready.")
 
-    # “generate 중” 스위칭 방지
     with _generate_lock:
-        # 요청 finetune_id 정규화(로그에 보기 좋게)
         requested_id = (finetune_id or DEFAULT_FINETUNE_ID).strip() or DEFAULT_FINETUNE_ID
-
-        # 스위칭 전 상태
         before_id = _current_finetune_id
 
-        # 요청 finetune_id가 다르면 여기서 스위칭
         ensure_finetune_loaded(requested_id)
-
-        # 스위칭 후 상태 (= 실제 적용된 값)
         after_id = _current_finetune_id
 
-        # 매 요청마다 "이번 응답에 실제로 적용된 finetune"을 터미널에 출력
         if before_id != after_id:
             print(f"[LLAMA_GEN] finetune switched: {before_id} -> {after_id} (requested={requested_id})")
         else:
             print(f"[LLAMA_GEN] finetune used: {after_id} (requested={requested_id})")
 
         prompt = build_prompt(chat_history, system_prompt)
+
+        # 입력 토큰화
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+        input_len = inputs["input_ids"].shape[-1]
 
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=max_tokens,
-                temperature=temperature,
-                top_p=top_p,
-                top_k=top_k,
-                repetition_penalty=repetition_penalty,
+                temperature=float(temperature),
+                top_p=float(top_p),
+                top_k=int(top_k),
+                repetition_penalty=float(repetition_penalty),
                 do_sample=True,
                 eos_token_id=tokenizer.eos_token_id,
+                pad_token_id=tokenizer.pad_token_id,
             )
 
-    decoded = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return decoded.split("### Response:")[-1].strip()
+        # 안정적인 답변 추출: "입력 이후 생성된 새 토큰"만 디코딩
+        gen_ids = outputs[0][input_len:]
+        reply = tokenizer.decode(gen_ids, skip_special_tokens=True)
+
+    return _postprocess_alpaca_reply(reply)

@@ -1,5 +1,7 @@
 # llama_views.py
 import logging
+from typing import Any, Dict, List
+
 from flask import Blueprint, render_template, request, session, jsonify, redirect, url_for
 from .llama_model import generate_chat  # generate_chat이 finetune_id 지원
 
@@ -68,6 +70,11 @@ _PARAM_SPECS = {
     "repetition_penalty": {"type": float, "min": 0.5, "max": 2.5},
 }
 
+# 컨텍스트 방어적 제한 (프론트가 쿠키로 보낸 history 기준)
+MAX_CONTEXT_MESSAGES = 24  # user/assistant 합쳐서 최근 24개(=약 12턴)
+MAX_MESSAGE_CHARS = 2000  # 메시지 1개 최대 길이
+MAX_SESSION_MESSAGES = 120  # 세션에는 조금 더 넉넉히 보관(뷰 렌더링용)
+
 
 def _clamp(v, vmin, vmax):
     return vmax if v > vmax else vmin if v < vmin else v
@@ -107,13 +114,66 @@ def _sanitize_finetune_id(raw_id: str) -> str:
     return raw_id if raw_id in allowed else DEFAULT_FINETUNE_ID
 
 
+def _sanitize_history(raw: Any,
+                      max_messages: int = MAX_CONTEXT_MESSAGES,
+                      max_chars_per_msg: int = MAX_MESSAGE_CHARS) -> List[Dict[str, str]]:
+    """
+    history: [{role:"user"|"assistant", content:"..."}] 형태만 허용
+    """
+    if not isinstance(raw, list):
+        return []
+
+    out: List[Dict[str, str]] = []
+    for m in raw:
+        if not isinstance(m, dict):
+            continue
+        role = m.get("role")
+        content = m.get("content")
+        if role not in ("user", "assistant"):
+            continue
+        if not isinstance(content, str):
+            continue
+        content = content.strip()
+        if not content:
+            continue
+        if len(content) > max_chars_per_msg:
+            content = content[:max_chars_per_msg]
+        out.append({"role": role, "content": content})
+
+    if len(out) > max_messages:
+        out = out[-max_messages:]
+    return out
+
+
+def _ensure_last_user_message(history: List[Dict[str, str]], user_input: str) -> List[Dict[str, str]]:
+    """
+    프론트가 이미 user_input을 history에 포함해서 보낼 수 있으니(쿠키 push 후 전송),
+    마지막이 동일 user_input이면 중복 append를 막는다.
+    """
+    if not user_input:
+        return history
+
+    if history:
+        last = history[-1]
+        if last.get("role") == "user" and last.get("content") == user_input:
+            return history
+
+    history.append({"role": "user", "content": user_input})
+    # safety: 컨텍스트 길이 유지
+    if len(history) > MAX_CONTEXT_MESSAGES:
+        history = history[-MAX_CONTEXT_MESSAGES:]
+    return history
+
+
 @bp.route("/llama", methods=["GET", "POST"])
 def llama_chat():
     session.setdefault("chat_history", [])
 
+    # JSON 요청(=fetch) 처리
     if request.method == "POST" and request.is_json:
         data = request.get_json(silent=True) or {}
 
+        # JSON reset(현재 프론트는 FORM reset을 쓰지만 혹시 대비)
         if data.get("action") == "reset_chat":
             session["chat_history"] = []
             session.modified = True
@@ -125,28 +185,50 @@ def llama_chat():
             return jsonify({"answer": ""})
 
         system_prompt, params = _extract_request_config(data)
-
         finetune_id = _sanitize_finetune_id(data.get("finetune_id", DEFAULT_FINETUNE_ID))
-        log.info("[SEND] finetune_id=%s", finetune_id)
 
+        # 핵심: 프론트가 보낸 history가 있으면 그걸 우선 사용(쿠키 컨텍스트)
+        client_history = _sanitize_history(data.get("history"))
+        if client_history:
+            working_history = client_history
+            log.info("[HISTORY] using client history (len=%d)", len(working_history))
+        else:
+            # fallback: 기존 세션 히스토리 사용
+            working_history = _sanitize_history(session.get("chat_history", []), max_messages=MAX_SESSION_MESSAGES)
+            log.info("[HISTORY] using session history (len=%d)", len(working_history))
+
+        # 이번 입력은 항상 마지막 user로 보장(중복이면 추가 안 함)
+        working_history = _ensure_last_user_message(working_history, user_input)
+
+        log.info("[SEND] finetune_id=%s", finetune_id)
         sp_preview = (system_prompt[:180] + "…") if len(system_prompt) > 180 else system_prompt
         log.info("[SEND] system_prompt=%r", sp_preview)
         log.info("[SEND] params=%s", params)
 
-        session["chat_history"].append({"role": "user", "content": user_input})
-
-        # 여기서 finetune_id 전달 → llama_model.py가 필요 시 스위칭 로드
+        # 모델 호출 (history + system_prompt + finetune_id)
         assistant_reply = generate_chat(
-            session["chat_history"],
+            working_history,
             system_prompt=system_prompt,
             finetune_id=finetune_id,
             **params,
         )
 
-        session["chat_history"].append({"role": "assistant", "content": assistant_reply})
+        # 답변 append
+        if not isinstance(assistant_reply, str):
+            assistant_reply = str(assistant_reply)
+        assistant_reply = assistant_reply.strip()
+
+        working_history.append({"role": "assistant", "content": assistant_reply})
+        if len(working_history) > MAX_SESSION_MESSAGES:
+            working_history = working_history[-MAX_SESSION_MESSAGES:]
+
+        # 세션에도 미러링(페이지 새로고침 시 chat_history 렌더링용)
+        session["chat_history"] = working_history
         session.modified = True
+
         return jsonify({"answer": assistant_reply})
 
+    # FORM POST 처리(Reset Chat 버튼)
     if request.method == "POST":
         action = request.form.get("action", "")
 
@@ -158,6 +240,7 @@ def llama_chat():
 
         return redirect(url_for("llama.llama_chat"))
 
+    # GET: 페이지 렌더링
     return render_template(
         "llama/llama.html",
         chat_history=session.get("chat_history", []),

@@ -769,6 +769,84 @@
           repetition_penalty: {type: "float", min: 0.5, max: 2.5},
         };
 
+          /* =========================
+             Chat history cookie helpers
+          ========================= */
+          const CHAT_COOKIE_NAME = "llama_chat_history";
+          const CHAT_MAX_TURNS = 12;        // user+assistant 합쳐서 최근 12개 메시지(=6턴 정도)
+          const CHAT_MAX_CHARS = 6000;      // 쿠키 폭주 방지 (대충 안전장치)
+
+          function setCookie(name, value, maxAgeSeconds = 60 * 60 * 24 * 7) {
+            // SameSite=Lax로 기본 CSRF 완화, 필요시 Secure 추가(HTTPS일 때)
+            document.cookie = `${name}=${value}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax`;
+          }
+
+          function getCookie(name) {
+            const parts = document.cookie.split(";").map(v => v.trim());
+            for (const p of parts) {
+              if (p.startsWith(name + "=")) return p.slice(name.length + 1);
+            }
+            return "";
+          }
+
+          function deleteCookie(name) {
+            document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
+          }
+
+          // 유니코드 안전 base64
+          function b64EncodeUnicode(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+          }
+          function b64DecodeUnicode(str) {
+            return decodeURIComponent(escape(atob(str)));
+          }
+
+          function loadChatHistoryFromCookie() {
+            try {
+              const raw = getCookie(CHAT_COOKIE_NAME);
+              if (!raw) return [];
+              const json = b64DecodeUnicode(raw);
+              const arr = JSON.parse(json);
+              if (!Array.isArray(arr)) return [];
+              // 최소 형태 검증
+              return arr
+                .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+                .map(m => ({ role: m.role, content: m.content }));
+            } catch (e) {
+              return [];
+            }
+          }
+
+          function saveChatHistoryToCookie(history) {
+            try {
+              let arr = Array.isArray(history) ? history.slice() : [];
+              // 최근 메시지만 유지
+              if (arr.length > CHAT_MAX_TURNS) arr = arr.slice(arr.length - CHAT_MAX_TURNS);
+
+              // 길이 제한(쿠키/요청 크기 방지)
+              let total = 0;
+              arr = arr.filter(m => {
+                total += (m.content || "").length;
+                return total <= CHAT_MAX_CHARS;
+              });
+
+              const json = JSON.stringify(arr);
+              const raw = b64EncodeUnicode(json);
+              setCookie(CHAT_COOKIE_NAME, raw);
+              return arr;
+            } catch (e) {
+              return Array.isArray(history) ? history : [];
+            }
+          }
+
+          // 페이지에서 계속 쓰는 in-memory 히스토리
+          let chatHistory = loadChatHistoryFromCookie();
+
+          function pushHistory(role, content) {
+            chatHistory.push({ role, content: String(content ?? "") });
+            chatHistory = saveChatHistoryToCookie(chatHistory);
+          }
+
         function clamp(v, mn, mx){ return v > mx ? mx : (v < mn ? mn : v); }
 
         function coerceInput(key, raw){
@@ -1021,95 +1099,109 @@
 
           // Send (항상 "현재 적용중" 값을 JSON에 포함해서 전송)
           sendBtn.addEventListener("click", async () => {
-            if (isSending || isResetting) return;
+              if (isSending || isResetting) return;
 
-            const text = textarea.value.trim();
-            if (!text) return;
+              const text = textarea.value.trim();
+              if (!text) return;
 
-            isSending = true;
+              isSending = true;
 
-            const userMsg = document.createElement("div");
-            userMsg.className = "msg user";
-            userMsg.innerText = text;
-            chat.appendChild(userMsg);
+              const userMsg = document.createElement("div");
+              userMsg.className = "msg user";
+              userMsg.innerText = text;
+              chat.appendChild(userMsg);
 
-            const typing = document.createElement("div");
-            typing.className = "msg assistant typing";
-            typing.innerText = "";
-            chat.appendChild(typing);
+              // 여기 추가: 유저 발화 쿠키에 저장
+              pushHistory("user", text);
 
-            scrollToBottom(wrapper);
-
-            textarea.value = "";
-            textarea.disabled = true;
-            sendBtn.disabled = true;
-            resetChatBtn.disabled = true;
-
-            try {
-              const res = await fetch("/llama", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                  prompt: text,
-                  system_prompt: appliedSystemPrompt,
-                  finetune_id: appliedFinetuneId,
-                  ...appliedParams
-                })
-              });
-
-              if (!res.ok) throw new Error("HTTP " + res.status);
-
-              const ct = res.headers.get("content-type") || "";
-              if (!ct.includes("application/json")) {
-                throw new Error("Invalid response type");
-              }
-
-              const data = await res.json();
-
-              typing.remove();
-
-              const botMsg = document.createElement("div");
-              botMsg.className = "msg assistant";
-              botMsg.innerText = (data && data.answer) ? data.answer : "(빈 응답)";
-              chat.appendChild(botMsg);
+              const typing = document.createElement("div");
+              typing.className = "msg assistant typing";
+              typing.innerText = "";
+              chat.appendChild(typing);
 
               scrollToBottom(wrapper);
 
-            } catch (err) {
-              typing.remove();
-
-              const errMsg = document.createElement("div");
-              errMsg.className = "msg assistant";
-              errMsg.innerText = "⚠️ 오류 발생\n" + err;
-              chat.appendChild(errMsg);
-
-              scrollToBottom(wrapper);
-            } finally {
-              textarea.disabled = false;
-              textarea.focus();
-              isSending = false;
-
+              textarea.value = "";
+              textarea.disabled = true;
               sendBtn.disabled = true;
-              resetChatBtn.disabled = false;
-            }
+              resetChatBtn.disabled = true;
+
+              try {
+                const res = await fetch("/llama", {
+                  method: "POST",
+                  headers: {"Content-Type": "application/json"},
+                  body: JSON.stringify({
+                    prompt: text,
+                    system_prompt: appliedSystemPrompt,
+                    finetune_id: appliedFinetuneId,
+                    ...appliedParams,
+                    // 컨텍스트로 보낼 대화내역
+                    history: chatHistory
+                  })
+                });
+
+                if (!res.ok) throw new Error("HTTP " + res.status);
+
+                const ct = res.headers.get("content-type") || "";
+                if (!ct.includes("application/json")) {
+                  throw new Error("Invalid response type");
+                }
+
+                const data = await res.json();
+
+                typing.remove();
+
+                const answerText = (data && data.answer) ? data.answer : "(빈 응답)";
+
+                const botMsg = document.createElement("div");
+                botMsg.className = "msg assistant";
+                botMsg.innerText = answerText;
+                chat.appendChild(botMsg);
+
+                // 어시스턴트 응답도 쿠키에 저장
+                pushHistory("assistant", answerText);
+
+                scrollToBottom(wrapper);
+
+              } catch (err) {
+                typing.remove();
+
+                const errMsg = document.createElement("div");
+                errMsg.className = "msg assistant";
+                errMsg.innerText = "⚠️ 오류 발생\n" + err;
+                chat.appendChild(errMsg);
+
+                scrollToBottom(wrapper);
+              } finally {
+                textarea.disabled = false;
+                textarea.focus();
+                isSending = false;
+
+                sendBtn.disabled = true;
+                resetChatBtn.disabled = false;
+              }
           });
 
           // Reset Chat (서버 FORM 리셋 + GET 재로드 → 디폴트로 복귀)
           resetChatBtn.addEventListener("click", () => {
-            if (isSending || isResetting) return;
+              if (isSending || isResetting) return;
 
-            const ok = confirm("대화 내역을 모두 초기화할까요?\n(새로고침해도 복구되지 않습니다)");
-            if (!ok) return;
+              const ok = confirm("대화 내역을 모두 초기화할까요?\n(새로고침해도 복구되지 않습니다)");
+              if (!ok) return;
 
-            isResetting = true;
+              // 여기 추가: 쿠키 히스토리 삭제
+              deleteCookie(CHAT_COOKIE_NAME);
+              chatHistory = [];
 
-            textarea.disabled = true;
-            sendBtn.disabled = true;
-            resetChatBtn.disabled = true;
+              isResetting = true;
 
-            setOverlay(true, "대화 초기화중입니다…");
+              textarea.disabled = true;
+              sendBtn.disabled = true;
+              resetChatBtn.disabled = true;
 
-            resetChatForm.submit();
+              setOverlay(true, "대화 초기화중입니다…");
+
+              resetChatForm.submit();
           });
 
           // Hyper Parameter Sync
