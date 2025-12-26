@@ -28,7 +28,7 @@ from huggingface_hub import login
 # =========================================================
 BASE_MODEL_NAME = "meta-llama/Meta-Llama-3-8B"
 
-# ✅ 서버 최초 부팅 기본 체크포인트(요구사항: 훼손 금지)
+# 서버 최초 부팅 기본 체크포인트(요구사항: 훼손 금지)
 DEFAULT_FINETUNE_ID = "ckpt_100"
 
 # llama_model.py와 같은 폴더에 checkpoint-100/50이 있다고 가정
@@ -56,7 +56,7 @@ _FINETUNE_DIR_MAP = {
     "ckpt_50": _derive_ckpt50_dir(_DEFAULT_CKPT100_DIR),
 }
 
-# ✅ (기존 구조 유지) "부팅 시 필요하면 학습"은 ckpt_100(OUTPUT_LORA_DIR)만 대상으로 둠
+# 기존 구조 유지) "부팅 시 필요하면 학습"은 ckpt_100(OUTPUT_LORA_DIR)만 대상으로 둠
 OUTPUT_LORA_DIR = _FINETUNE_DIR_MAP["ckpt_100"]
 FINETUNE_DONE_MARK = os.path.join(OUTPUT_LORA_DIR, ".finetune_done")
 FINETUNE_LOCK_FILE = os.path.join(OUTPUT_LORA_DIR, ".finetune_lock")
@@ -71,13 +71,13 @@ _current_finetune_id = None
 
 _logged_in = False
 
-# ✅ 동시 generate 보호(Transformers/GPU는 멀티스레드 동시 generate가 자주 문제남)
+# 동시 generate 보호(Transformers/GPU는 멀티스레드 동시 generate가 자주 문제남)
 _generate_lock = threading.Lock()
 
-# ✅ 모델 로딩/스위칭 동시성 보호
+# 모델 로딩/스위칭 동시성 보호
 _load_lock = threading.Lock()
 
-# ✅ 초기화 상태
+# 초기화 상태
 _ready_event = threading.Event()
 _init_error = None
 _init_thread_started = False
@@ -141,7 +141,7 @@ def _release_file_lock(fd: int, lock_path: str):
 
 def maybe_finetune_lora():
     """
-    ✅ 서버 부팅 시 “필요하면” LoRA 파인튜닝 1회 수행 (ckpt_100만)
+    서버 부팅 시 “필요하면” LoRA 파인튜닝 1회 수행 (ckpt_100만)
     - 이미 OUTPUT_LORA_DIR에 체크포인트가 있거나 .finetune_done이 있으면 스킵
     - 락으로 중복 실행 방지
     """
@@ -223,7 +223,7 @@ def _load_base_and_tokenizer_once():
         low_cpu_mem_usage=True,
     )
 
-    # ✅ tokenizer는 base에서 로드 (LoRA 폴더에 tokenizer가 없을 수 있으니 안정적)
+    # tokenizer는 base에서 로드 (LoRA 폴더에 tokenizer가 없을 수 있으니 안정적)
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -235,7 +235,7 @@ def _load_base_and_tokenizer_once():
 # =========================================================
 def load_model(finetune_id: str = DEFAULT_FINETUNE_ID):
     """
-    ✅ Base(1회) + 선택 LoRA(요청마다 스위칭 가능) 로딩
+    Base(1회) + 선택 LoRA(요청마다 스위칭 가능) 로딩
     - finetune_id가 바뀌면 기존 PeftModel을 폐기하고 새 adapter로 교체
     """
     global model, _current_finetune_id
@@ -274,7 +274,7 @@ def load_model(finetune_id: str = DEFAULT_FINETUNE_ID):
         model.eval()
         _current_finetune_id = target_id
 
-        # ✅ LoRA 적용 확인 로그
+        # LoRA 적용 확인 로그
         try:
             adapters = getattr(model, "peft_config", None)
             if adapters:
@@ -284,7 +284,7 @@ def load_model(finetune_id: str = DEFAULT_FINETUNE_ID):
         except Exception as e:
             print(f"[LLAMA_LOAD] peft_adapters=ERROR {repr(e)}")
 
-        print("[LLAMA_LOAD] ✅ model ready (base+LoRA applied)")
+        print("[LLAMA_LOAD] model ready (base+LoRA applied)")
 
 
 def ensure_finetune_loaded(finetune_id: str):
@@ -318,7 +318,7 @@ def build_prompt(chat_history, system_prompt):
 
 
 # =========================================================
-# ✅ 서버 부팅 시 초기화 시작 (스레드)
+# 서버 부팅 시 초기화 시작 (스레드)
 # =========================================================
 def startup(async_init: bool = True):
     """
@@ -337,7 +337,7 @@ def startup(async_init: bool = True):
         try:
             ensure_hf_login()
             maybe_finetune_lora()  # ckpt_100만 “필요 시 학습”
-            load_model(DEFAULT_FINETUNE_ID)  # ✅ 부팅 기본 ckpt_100 유지
+            load_model(DEFAULT_FINETUNE_ID)  # 부팅 기본 ckpt_100 유지
             _ready_event.set()
         except Exception as e:
             _init_error = e
@@ -359,14 +359,14 @@ def init_error():
 
 
 # =========================================================
-# ✅ 동기 워밍업
+# 동기 워밍업
 # =========================================================
 def warmup_model(
         do_warmup_generate: bool = True,
         max_new_tokens: int = 1,
 ):
     """
-    ✅ 서버 부팅 시 미리 로드하고 ready를 올려두는 용도.
+    서버 부팅 시 미리 로드하고 ready를 올려두는 용도.
     """
     global _init_error, _init_thread_started
 
@@ -376,7 +376,7 @@ def warmup_model(
     try:
         ensure_hf_login()
         maybe_finetune_lora()
-        load_model(DEFAULT_FINETUNE_ID)  # ✅ 부팅 기본 ckpt_100 유지
+        load_model(DEFAULT_FINETUNE_ID)  # 부팅 기본 ckpt_100 유지
 
         if do_warmup_generate:
             prompt = "### System:\nYou are a helpful assistant.\n\n### Instruction:\n안녕\n\n### Response:\n"
@@ -405,7 +405,7 @@ def warmup_model(
 def generate_chat(
         chat_history,
         system_prompt,
-        finetune_id: str = DEFAULT_FINETUNE_ID,  # ✅ 추가: 요청 finetune_id
+        finetune_id: str = DEFAULT_FINETUNE_ID,  # 추가: 요청 finetune_id
         temperature=0.7,
         top_p=0.9,
         top_k=50,
@@ -415,7 +415,7 @@ def generate_chat(
         wait_timeout_sec: int = 600,
 ):
     """
-    ✅ 요청 finetune_id에 맞춰 LoRA를 자동 스위칭 후 generate.
+    요청 finetune_id에 맞춰 LoRA를 자동 스위칭 후 generate.
     - generate 도중 스위칭되는 걸 막기 위해 _generate_lock으로 보호.
     """
     if wait_ready:
@@ -426,10 +426,25 @@ def generate_chat(
         if not is_ready():
             raise RuntimeError("Model is not ready.")
 
-    # ✅ “generate 중” 스위칭 방지
+    # “generate 중” 스위칭 방지
     with _generate_lock:
-        # 요청 finetune_id가 다르면 여기서 스위칭 (기존 로드 종료 → 새 로드)
-        ensure_finetune_loaded(finetune_id)
+        # 요청 finetune_id 정규화(로그에 보기 좋게)
+        requested_id = (finetune_id or DEFAULT_FINETUNE_ID).strip() or DEFAULT_FINETUNE_ID
+
+        # 스위칭 전 상태
+        before_id = _current_finetune_id
+
+        # 요청 finetune_id가 다르면 여기서 스위칭
+        ensure_finetune_loaded(requested_id)
+
+        # 스위칭 후 상태 (= 실제 적용된 값)
+        after_id = _current_finetune_id
+
+        # 매 요청마다 "이번 응답에 실제로 적용된 finetune"을 터미널에 출력
+        if before_id != after_id:
+            print(f"[LLAMA_GEN] finetune switched: {before_id} -> {after_id} (requested={requested_id})")
+        else:
+            print(f"[LLAMA_GEN] finetune used: {after_id} (requested={requested_id})")
 
         prompt = build_prompt(chat_history, system_prompt)
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
