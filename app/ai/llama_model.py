@@ -544,7 +544,7 @@ def generate_chat(
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
         input_len = inputs["input_ids"].shape[-1]
 
-        # ✅ 여기서 "이번 요청에 실제 반영된 컨텍스트" 로그 출력
+        # 컨텍스트 로그 출력
         _log_context(chat_history=chat_history, system_prompt=system_prompt, prompt=prompt, input_len=input_len)
 
         with torch.no_grad():

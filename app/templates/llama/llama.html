@@ -4,14 +4,14 @@
     <meta charset="UTF-8"/>
     <title>LLaMA3 Chat Playground</title>
 
-    <!-- 네비게이션 바가 Bootstrap 기반이므로 llama.html에서만 Bootstrap 로드 -->
+    <!-- Bootstrap (기존 유지) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
         :root{
           /* =========================
-             MODERN "SOFT DARK" (너무 어둡지도/밝지도 않게)
+             MODERN "SOFT DARK"
              - 네비바는 그대로(아래 'predict-navbar' 섹션 수정 금지)
           ========================= */
           --bg: #0f172a;
@@ -33,7 +33,7 @@
           --assistant: rgba(148,163,184,0.12);
           --assistant-strong: rgba(148,163,184,0.16);
 
-          --nav-h: 70px; /* 네비 높이 */
+          --nav-h: 70px;
         }
 
         * { box-sizing: border-box; font-family: Pretendard, sans-serif; }
@@ -58,7 +58,7 @@
         .app{
           height: calc(100vh - var(--nav-h));
           display: grid;
-          grid-template-columns: 1fr 380px;
+          grid-template-columns: 1fr 410px; /* 오른쪽 설정패널 살짝 확장 */
           overflow: hidden;
         }
 
@@ -250,8 +250,8 @@
           letter-spacing: -0.3px;
         }
 
-        /* 현황판 */
-        .status-card{
+        /* ===== Shared UI blocks ===== */
+        .card-block{
           background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
           border: 1px solid var(--border);
           border-radius: 16px;
@@ -259,6 +259,145 @@
           box-shadow: 0 12px 28px rgba(0,0,0,0.18);
           margin-bottom: 14px;
         }
+
+        .section-title{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:10px;
+          margin-bottom: 10px;
+        }
+
+        .section-title .t{
+          font-weight: 950;
+          letter-spacing: -0.2px;
+          display:flex;
+          align-items:center;
+          gap:8px;
+        }
+
+        .pill-mini{
+          font-size: 11px;
+          font-weight: 950;
+          padding: 4px 8px;
+          border-radius: 999px;
+          border: 1px solid rgba(148,163,184,0.25);
+          background: rgba(148,163,184,0.10);
+          color: rgba(229,231,235,0.92);
+          white-space: nowrap;
+        }
+
+        .hint{
+          font-size: 12px;
+          color: var(--muted);
+          font-weight: 750;
+          line-height: 1.35;
+          margin-top: -4px;
+          margin-bottom: 10px;
+        }
+
+        .field{
+          margin-bottom: 12px;
+        }
+
+        .field label{
+          font-size: 12px;
+          color: var(--muted);
+          display:block;
+          margin-bottom: 6px;
+          font-weight: 850;
+          letter-spacing: -0.1px;
+        }
+
+        .field input[type="text"],
+        .field input[type="number"],
+        .field select,
+        .field textarea{
+          width: 100%;
+          background: rgba(15,23,42,0.55);
+          border: 1px solid var(--border);
+          color: var(--text);
+          border-radius: 12px;
+          padding: 8px 10px;
+          outline:none;
+        }
+
+        .field textarea{
+          resize: vertical;
+          min-height: 62px;
+        }
+
+        .field input[type="text"]:focus,
+        .field input[type="number"]:focus,
+        .field select:focus,
+        .field textarea:focus{
+          border-color: rgba(59,130,246,0.55);
+          box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+          background: rgba(15,23,42,0.68);
+        }
+
+        .grid-2{
+          display:grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+
+        .grid-3{
+          display:grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 10px;
+        }
+
+        .inline-row{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap: 10px;
+          margin-top: 10px;
+        }
+
+        .btn-ghost{
+          width: 100% !important;
+          padding: 12px 10px !important;
+          border-radius: 14px !important;
+          border: 1px solid var(--border) !important;
+          background: linear-gradient(180deg, rgba(148,163,184,0.10), rgba(148,163,184,0.06)) !important;
+          color: var(--text) !important;
+          cursor: pointer !important;
+          margin-top: 12px !important;
+          font-weight: 900 !important;
+          box-shadow: 0 12px 26px rgba(0,0,0,0.18) !important;
+        }
+        .btn-ghost:hover{ filter: brightness(1.03); transform: translateY(-1px); }
+
+        .btn-brand{
+          width: 100%;
+          padding: 12px 10px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,107,0,0.28);
+          background: linear-gradient(180deg, rgba(255,107,0,0.96), rgba(255,107,0,0.78));
+          color: #fff;
+          cursor: pointer;
+          margin-top: 12px;
+          font-weight: 950;
+          box-shadow: 0 14px 30px rgba(255,107,0,0.18);
+          transition: transform .12s ease, filter .12s ease;
+        }
+        .btn-brand:hover{ filter: brightness(1.03); transform: translateY(-1px); }
+        .btn-brand:active{ transform: translateY(0px); }
+
+        .divider{
+          height: 1px;
+          background: rgba(148,163,184,0.16);
+          margin: 12px 0;
+        }
+
+        .mono{
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+          font-size: 12px;
+        }
+
+        /* ===== Status panel (기존 현황판) ===== */
         .status-top{
           display:flex;
           align-items:center;
@@ -336,165 +475,31 @@
           letter-spacing: -0.1px;
         }
 
-        .settings textarea[name="system_prompt"]{
-          width: 100%;
-          background: rgba(15,23,42,0.55) !important;
-          color: var(--text) !important;
-          border: 1px solid var(--border) !important;
-          border-radius: 14px !important;
-          padding: 10px 12px !important;
-          outline: none !important;
-        }
-        .settings textarea[name="system_prompt"]:focus{
-          border-color: rgba(255,107,0,0.60) !important;
-          box-shadow: 0 0 0 4px rgba(255,107,0,0.14) !important;
-          background: rgba(15,23,42,0.68) !important;
-        }
-
-        .param{ margin-bottom: 16px; }
-        .param label{
-          font-size: 13px;
-          color: var(--muted);
-          display:block;
-          margin-bottom: 6px;
-          font-weight: 750;
-        }
-
-        .param-row{
-          display:flex;
-          gap:10px;
-          align-items:center;
-        }
-
-        .param-row input[type=range]{
-          flex:1;
-          accent-color: var(--primary);
-        }
-
-        .param-row input[type=number]{
-          width: 78px;
-          background: rgba(15,23,42,0.55);
-          border: 1px solid var(--border);
-          color: var(--text);
-          border-radius: 12px;
-          padding: 6px 8px;
-          outline:none;
-        }
-        .param-row input[type=number]:focus{
-          border-color: rgba(59,130,246,0.55);
-          box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
-          background: rgba(15,23,42,0.68);
-        }
-
-        #resetParams{
-          width: 100% !important;
-          padding: 12px 10px !important;
-          border-radius: 14px !important;
-          border: 1px solid var(--border) !important;
-          background: linear-gradient(180deg, rgba(148,163,184,0.10), rgba(148,163,184,0.06)) !important;
-          color: var(--text) !important;
-          cursor: pointer !important;
-          margin-top: 12px !important;
-          font-weight: 900 !important;
-          box-shadow: 0 12px 26px rgba(0,0,0,0.18) !important;
-        }
-        #resetParams:hover{
-          filter: brightness(1.03);
-          transform: translateY(-1px);
-        }
-
-        .apply{
-          width: 100%;
-          padding: 12px 10px;
-          border-radius: 14px;
-          border: 1px solid rgba(255,107,0,0.28);
-          background: linear-gradient(180deg, rgba(255,107,0,0.96), rgba(255,107,0,0.78));
-          color: #fff;
-          cursor: pointer;
-          margin-top: 12px;
-          font-weight: 950;
-          box-shadow: 0 14px 30px rgba(255,107,0,0.18);
-          transition: transform .12s ease, filter .12s ease;
-        }
-        .apply:hover{ filter: brightness(1.03); transform: translateY(-1px); }
-        .apply:active{ transform: translateY(0px); }
-
-        .overlay{
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.45);
-          backdrop-filter: blur(2px);
-          display: none;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
-          pointer-events: all;
-        }
-
-        .overlay-box{
-          background: rgba(17,24,39,0.92);
-          border: 1px solid var(--border-2);
-          color: var(--text);
-          padding: 20px 26px;
-          border-radius: 16px;
-          font-size: 15px;
-          font-weight: 900;
-          box-shadow: var(--shadow);
-          backdrop-filter: blur(10px);
-        }
-
-        /* ===== Fine-tuning Preset UI ===== */
-        .finetune-wrap{
-          margin-top: 14px;
-          margin-bottom: 16px;
-        }
-        /* ===== Fine-tuning Header (가독성 개선) ===== */
-        .finetune-head{
-          display:block;           /* 기존 flex 해제 */
-          margin-bottom: 12px;
-        }
-
-        .finetune-head-left{
-          display:flex;
-          flex-direction:column;
-          gap:6px;
-        }
-
+        /* ===== Fine-tuning Preset UI (기존 유지) ===== */
+        .finetune-wrap{ margin-top: 14px; margin-bottom: 16px; }
+        .finetune-head{ display:block; margin-bottom: 12px; }
+        .finetune-head-left{ display:flex; flex-direction:column; gap:6px; }
         .finetune-head-title{
           font-size: 20px;
           font-weight: 950;
           letter-spacing: -0.3px;
-          white-space: nowrap;     /* Fine-tuning 한 줄 고정 */
+          white-space: nowrap;
           overflow: hidden;
-          text-overflow: ellipsis; /* 혹시 더 길어지면 … 처리 */
+          text-overflow: ellipsis;
         }
-
         .finetune-head-desc{
           font-size: 12px;
           color: var(--muted);
           font-weight: 750;
           line-height: 1.35;
-          word-break: keep-all;    /* 한글 어색한 분리 방지 */
+          word-break: keep-all;
           overflow: hidden;
-
-          /* 안내문이 너무 길면 최대 2줄까지만 */
           display: -webkit-box;
           -webkit-box-orient: vertical;
           -webkit-line-clamp: 2;
         }
 
-        .finetune-sub{
-          font-size: 12px;
-          color: var(--muted);
-          font-weight: 750;
-          line-height: 1.25;
-          text-align: right;
-        }
-        .finetune-grid{
-          display:grid;
-          grid-template-columns: 1fr;
-          gap: 10px;
-        }
+        .finetune-grid{ display:grid; grid-template-columns: 1fr; gap: 10px; }
         .finetune-card{
           position: relative;
           background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
@@ -506,10 +511,7 @@
           transition: transform .12s ease, border-color .12s ease, filter .12s ease;
           user-select: none;
         }
-        .finetune-card:hover{
-          transform: translateY(-1px);
-          filter: brightness(1.02);
-        }
+        .finetune-card:hover{ transform: translateY(-1px); filter: brightness(1.02); }
         .finetune-card.selected{
           border-color: rgba(255,107,0,0.55);
           box-shadow:
@@ -586,80 +588,13 @@
           position: relative;
           flex: 0 0 auto;
         }
-        .finetune-card.selected .finetune-radio{
-          border-color: rgba(255,107,0,0.85);
-        }
+        .finetune-card.selected .finetune-radio{ border-color: rgba(255,107,0,0.85); }
         .finetune-card.selected .finetune-radio::after{
           content:"";
           position:absolute;
           inset: 3px;
           border-radius: 999px;
           background: rgba(255,107,0,0.95);
-        }
-        .finetune-detail{
-          margin-top: 10px;
-          padding-top: 10px;
-          border-top: 1px dashed rgba(148,163,184,0.22);
-          color: rgba(229,231,235,0.92);
-          font-size: 12.5px;
-          line-height: 1.55;
-          font-weight: 750;
-        }
-
-        /* ======================================
-           전월세 지도 페이지 전용 네비게이션바 CSS (공용) - 수정 금지
-        ====================================== */
-        .predict-navbar {
-          background: linear-gradient(90deg, #0b1d33, #0f2a52);
-          height: var(--nav-h);
-          padding: 0 2rem !important;
-          border-bottom: none;
-        }
-
-        .predict-navbar .nav-link {
-          color: #fff !important;
-          font-weight: 500;
-          font-size: 1rem;
-          transition: color 0.25s ease, transform 0.25s ease;
-          display: inline-block;
-        }
-
-        .predict-navbar .nav-link:hover {
-          color: #ff6b00 !important;
-          transform: translateY(-2px);
-        }
-
-        .predict-navbar .navbar-brand img {
-          height: 40px;
-          filter: brightness(1.1);
-        }
-
-        .predict-navbar .navbar-toggler {
-          border-color: rgba(255,255,255,0.5);
-        }
-
-        .predict-navbar .navbar-toggler-icon {
-          filter: brightness(200%);
-        }
-
-        .chat-wrapper::-webkit-scrollbar,
-        .settings::-webkit-scrollbar { width: 10px; }
-
-        .chat-wrapper::-webkit-scrollbar-thumb,
-        .settings::-webkit-scrollbar-thumb{
-          background: rgba(148,163,184,0.28);
-          border-radius: 999px;
-          border: 2px solid rgba(17,24,39,0.55);
-        }
-
-        .chat-wrapper::-webkit-scrollbar-track,
-        .settings::-webkit-scrollbar-track{
-          background: rgba(0,0,0,0);
-        }
-
-        @media (max-width: 992px){
-          .app{ grid-template-columns: 1fr; }
-          .settings{ display:none; }
         }
 
         .finetune-detail{
@@ -675,26 +610,22 @@
           font-weight: 750;
           color: rgba(229,231,235,0.92);
         }
-
         .ft-row{
           display: grid;
-          grid-template-columns: 92px 1fr; /* key 폭 고정 */
+          grid-template-columns: 92px 1fr;
           gap: 10px;
           align-items: start;
         }
-
         .ft-k{
           color: var(--muted);
           font-weight: 900;
           font-size: 12px;
           letter-spacing: -0.1px;
         }
-
         .ft-v{
           color: rgba(229,231,235,0.95);
           word-break: break-word;
         }
-
         .ft-code{
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
           font-size: 12px;
@@ -706,20 +637,112 @@
           white-space: nowrap;
         }
 
+        /* ===== overlay ===== */
+        .overlay{
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.45);
+          backdrop-filter: blur(2px);
+          display: none;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          pointer-events: all;
+        }
+        .overlay-box{
+          background: rgba(17,24,39,0.92);
+          border: 1px solid var(--border-2);
+          color: var(--text);
+          padding: 20px 26px;
+          border-radius: 16px;
+          font-size: 15px;
+          font-weight: 900;
+          box-shadow: var(--shadow);
+          backdrop-filter: blur(10px);
+        }
+
+        /* ===== Logs box ===== */
+        .logbox{
+          background: rgba(15,23,42,0.40);
+          border: 1px solid var(--border);
+          border-radius: 14px;
+          padding: 10px 10px;
+          height: 140px;
+          overflow: auto;
+          font-size: 12px;
+          line-height: 1.55;
+          white-space: pre-wrap;
+          word-break: break-word;
+          color: rgba(229,231,235,0.92);
+        }
+
+        /* ===== NAVBAR (공용) - 수정 금지 ===== */
+        .predict-navbar {
+          background: linear-gradient(90deg, #0b1d33, #0f2a52);
+          height: var(--nav-h);
+          padding: 0 2rem !important;
+          border-bottom: none;
+        }
+        .predict-navbar .nav-link {
+          color: #fff !important;
+          font-weight: 500;
+          font-size: 1rem;
+          transition: color 0.25s ease, transform 0.25s ease;
+          display: inline-block;
+        }
+        .predict-navbar .nav-link:hover {
+          color: #ff6b00 !important;
+          transform: translateY(-2px);
+        }
+        .predict-navbar .navbar-brand img {
+          height: 40px;
+          filter: brightness(1.1);
+        }
+        .predict-navbar .navbar-toggler {
+          border-color: rgba(255,255,255,0.5);
+        }
+        .predict-navbar .navbar-toggler-icon {
+          filter: brightness(200%);
+        }
+
+        .chat-wrapper::-webkit-scrollbar,
+        .settings::-webkit-scrollbar { width: 10px; }
+
+        .chat-wrapper::-webkit-scrollbar-thumb,
+        .settings::-webkit-scrollbar-thumb{
+          background: rgba(148,163,184,0.28);
+          border-radius: 999px;
+          border: 2px solid rgba(17,24,39,0.55);
+        }
+
+        .chat-wrapper::-webkit-scrollbar-track,
+        .settings::-webkit-scrollbar-track{ background: rgba(0,0,0,0); }
+
+        @media (max-width: 992px){
+          .app{ grid-template-columns: 1fr; }
+          .settings{ display:none; }
+        }
     </style>
 
     <script>
-        // 서버가 주는 "디폴트" (페이지 열 때마다 이것으로 시작)
+        /**************************************************************
+         * 1) 서버 제공 디폴트들
+         **************************************************************/
         const DEFAULT_PRESET = {{ (default_params if default_params is defined else (params if params is defined else {})) | tojson }};
         const DEFAULT_SYSTEM_PROMPT = {{ (default_system_prompt if default_system_prompt is defined else (system_prompt if system_prompt is defined else "")) | tojson }};
 
-        // Fine-tuning presets (서버에서 주면 그걸 쓰고, 없으면 fallback 사용)
-        // server expected:
-        // finetune_presets: [{id,title,badge,recommended,short,detail}, ...]
-        // default_finetune_id: "ckpt_50" 등
+        // Fine-tuning presets (체크포인트 선택은 프리셋 유지)
         const SERVER_FINETUNE_PRESETS = {{ (finetune_presets if finetune_presets is defined else []) | tojson }};
         const DEFAULT_FINETUNE_ID = {{ (default_finetune_id if default_finetune_id is defined else "") | tojson }};
 
+        // 파인튜닝 기본 설정(서버에서 주면 우선 사용)
+        // server expected:
+        // default_train_cfg: { data:{...}, lora:{...}, train:{...}, quant:{...}, prompt:{...}, output:{...} }
+        const SERVER_DEFAULT_TRAIN_CFG = {{ (default_train_cfg if default_train_cfg is defined else {}) | tojson }};
+
+        /**************************************************************
+         * 2) fallback finetune preset
+         **************************************************************/
         const FALLBACK_FINETUNE_PRESETS = [
           {
             id: "ckpt_50",
@@ -756,11 +779,90 @@
           ? SERVER_FINETUNE_PRESETS
           : FALLBACK_FINETUNE_PRESETS;
 
-        // 클라에서만 유지되는 "현재 적용중" 값(쿠키/세션 저장 X)
+        /**************************************************************
+         * 3) 클라이언트 적용중 값 (채팅용)
+         **************************************************************/
         let appliedSystemPrompt = DEFAULT_SYSTEM_PROMPT;
         let appliedParams = { ...DEFAULT_PRESET };
         let appliedFinetuneId = DEFAULT_FINETUNE_ID || (FINETUNE_PRESETS[0] ? FINETUNE_PRESETS[0].id : "");
 
+        /**************************************************************
+         * 4) 파인튜닝 설정(학습 실행용) - UI에서 편집 가능
+         *    - 서버에서 default_train_cfg 주면 merge
+         **************************************************************/
+        const FALLBACK_TRAIN_CFG = {
+          data: {
+            dataset_path: "/workspace/data/train.jsonl",
+            eval_path: "",
+            text_field: "text",
+            split_ratio: 0.0,                 // 0이면 eval 미사용
+            max_seq_length: 2048,
+            packing: false
+          },
+          prompt: {
+            template: "alpaca",               // alpaca | chatml | custom
+            instruction_key: "instruction",
+            response_key: "response",
+            custom_format: ""                 // template=custom일 때 사용
+          },
+          lora: {
+            r: 16,
+            alpha: 16,
+            dropout: 0.05,
+            target_modules: "q_proj,k_proj,v_proj,o_proj", // CSV
+            bias: "none"                      // none|all|lora_only
+          },
+          quant: {
+            load_in_4bit: true,
+            bnb_4bit_quant_type: "nf4",       // nf4|fp4
+            bnb_4bit_compute_dtype: "bfloat16", // float16|bfloat16|float32
+            bnb_4bit_use_double_quant: true
+          },
+          train: {
+            base_model: "meta-llama/Meta-Llama-3-8B",
+            learning_rate: 2e-4,
+            per_device_train_batch_size: 1,
+            gradient_accumulation_steps: 8,
+            max_steps: 100,
+            warmup_ratio: 0.03,
+            weight_decay: 0.0,
+            lr_scheduler_type: "cosine",      // linear|cosine|constant|constant_with_warmup
+            optim: "paged_adamw_8bit",        // adamw_torch|paged_adamw_8bit|paged_adamw_32bit
+            bf16: true,
+            fp16: false,
+            seed: 42,
+            logging_steps: 10,
+            save_steps: 50,
+            eval_steps: 0
+          },
+          output: {
+            output_dir: "/workspace/fine_tune_output",
+            run_name: "llama3_lora_sft",
+            save_total_limit: 2,
+            push_to_hub: false,
+            hub_repo_id: ""
+          }
+        };
+
+        function deepMerge(dst, src){
+          if (!src || typeof src !== "object") return dst;
+          for (const k of Object.keys(src)){
+            const sv = src[k];
+            if (sv && typeof sv === "object" && !Array.isArray(sv)){
+              if (!dst[k] || typeof dst[k] !== "object") dst[k] = {};
+              deepMerge(dst[k], sv);
+            } else {
+              dst[k] = sv;
+            }
+          }
+          return dst;
+        }
+
+        let trainCfg = deepMerge(structuredClone(FALLBACK_TRAIN_CFG), SERVER_DEFAULT_TRAIN_CFG || {});
+
+        /**************************************************************
+         * 5) 하이퍼파라미터(채팅) 스펙
+         **************************************************************/
         const PARAM_SPECS = {
           temperature: {type: "float", min: 0.0, max: 2.0},
           top_p: {type: "float", min: 0.0, max: 1.0},
@@ -769,84 +871,73 @@
           repetition_penalty: {type: "float", min: 0.5, max: 2.5},
         };
 
-          /* =========================
-             Chat history cookie helpers
-          ========================= */
-          const CHAT_COOKIE_NAME = "llama_chat_history";
-          const CHAT_MAX_TURNS = 12;        // user+assistant 합쳐서 최근 12개 메시지(=6턴 정도)
-          const CHAT_MAX_CHARS = 6000;      // 쿠키 폭주 방지 (대충 안전장치)
+        /**************************************************************
+         * 6) 쿠키 히스토리 (기존 유지)
+         **************************************************************/
+        const CHAT_COOKIE_NAME = "llama_chat_history";
+        const CHAT_MAX_TURNS = 12;
+        const CHAT_MAX_CHARS = 6000;
 
-          function setCookie(name, value, maxAgeSeconds = 60 * 60 * 24 * 7) {
-            // SameSite=Lax로 기본 CSRF 완화, 필요시 Secure 추가(HTTPS일 때)
-            document.cookie = `${name}=${value}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax`;
+        function setCookie(name, value, maxAgeSeconds = 60 * 60 * 24 * 7) {
+          document.cookie = `${name}=${value}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax`;
+        }
+        function getCookie(name) {
+          const parts = document.cookie.split(";").map(v => v.trim());
+          for (const p of parts) {
+            if (p.startsWith(name + "=")) return p.slice(name.length + 1);
           }
+          return "";
+        }
+        function deleteCookie(name) {
+          document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
+        }
+        function b64EncodeUnicode(str) { return btoa(unescape(encodeURIComponent(str))); }
+        function b64DecodeUnicode(str) { return decodeURIComponent(escape(atob(str))); }
 
-          function getCookie(name) {
-            const parts = document.cookie.split(";").map(v => v.trim());
-            for (const p of parts) {
-              if (p.startsWith(name + "=")) return p.slice(name.length + 1);
-            }
-            return "";
+        function loadChatHistoryFromCookie() {
+          try {
+            const raw = getCookie(CHAT_COOKIE_NAME);
+            if (!raw) return [];
+            const json = b64DecodeUnicode(raw);
+            const arr = JSON.parse(json);
+            if (!Array.isArray(arr)) return [];
+            return arr
+              .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+              .map(m => ({ role: m.role, content: m.content }));
+          } catch (e) {
+            return [];
           }
+        }
 
-          function deleteCookie(name) {
-            document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
+        function saveChatHistoryToCookie(history) {
+          try {
+            let arr = Array.isArray(history) ? history.slice() : [];
+            if (arr.length > CHAT_MAX_TURNS) arr = arr.slice(arr.length - CHAT_MAX_TURNS);
+
+            let total = 0;
+            arr = arr.filter(m => {
+              total += (m.content || "").length;
+              return total <= CHAT_MAX_CHARS;
+            });
+
+            const json = JSON.stringify(arr);
+            const raw = b64EncodeUnicode(json);
+            setCookie(CHAT_COOKIE_NAME, raw);
+            return arr;
+          } catch (e) {
+            return Array.isArray(history) ? history : [];
           }
+        }
 
-          // 유니코드 안전 base64
-          function b64EncodeUnicode(str) {
-            return btoa(unescape(encodeURIComponent(str)));
-          }
-          function b64DecodeUnicode(str) {
-            return decodeURIComponent(escape(atob(str)));
-          }
+        let chatHistory = loadChatHistoryFromCookie();
+        function pushHistory(role, content) {
+          chatHistory.push({ role, content: String(content ?? "") });
+          chatHistory = saveChatHistoryToCookie(chatHistory);
+        }
 
-          function loadChatHistoryFromCookie() {
-            try {
-              const raw = getCookie(CHAT_COOKIE_NAME);
-              if (!raw) return [];
-              const json = b64DecodeUnicode(raw);
-              const arr = JSON.parse(json);
-              if (!Array.isArray(arr)) return [];
-              // 최소 형태 검증
-              return arr
-                .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
-                .map(m => ({ role: m.role, content: m.content }));
-            } catch (e) {
-              return [];
-            }
-          }
-
-          function saveChatHistoryToCookie(history) {
-            try {
-              let arr = Array.isArray(history) ? history.slice() : [];
-              // 최근 메시지만 유지
-              if (arr.length > CHAT_MAX_TURNS) arr = arr.slice(arr.length - CHAT_MAX_TURNS);
-
-              // 길이 제한(쿠키/요청 크기 방지)
-              let total = 0;
-              arr = arr.filter(m => {
-                total += (m.content || "").length;
-                return total <= CHAT_MAX_CHARS;
-              });
-
-              const json = JSON.stringify(arr);
-              const raw = b64EncodeUnicode(json);
-              setCookie(CHAT_COOKIE_NAME, raw);
-              return arr;
-            } catch (e) {
-              return Array.isArray(history) ? history : [];
-            }
-          }
-
-          // 페이지에서 계속 쓰는 in-memory 히스토리
-          let chatHistory = loadChatHistoryFromCookie();
-
-          function pushHistory(role, content) {
-            chatHistory.push({ role, content: String(content ?? "") });
-            chatHistory = saveChatHistoryToCookie(chatHistory);
-          }
-
+        /**************************************************************
+         * 7) 유틸
+         **************************************************************/
         function clamp(v, mn, mx){ return v > mx ? mx : (v < mn ? mn : v); }
 
         function coerceInput(key, raw){
@@ -857,7 +948,6 @@
             else v = parseFloat(String(raw));
             if(Number.isNaN(v)) throw new Error("NaN");
             v = clamp(v, spec.min, spec.max);
-            // int 보장
             if(spec.type === "int") v = Math.trunc(v);
             return v;
           }catch(e){
@@ -948,6 +1038,16 @@
           cards.forEach(c => c.classList.toggle("selected", c.dataset.id === id));
         }
 
+        function formatDetailValue(v){
+          const s = String(v ?? "");
+          return s
+            .replace(/\b(global_step=\d+)\b/g, "<span class='ft-code'>$1</span>")
+            .replace(/\b(max_steps=\d+)\b/g, "<span class='ft-code'>$1</span>")
+            .replace(/\b(save_steps=\d+)\b/g, "<span class='ft-code'>$1</span>")
+            .replace(/\b(4-bit NF4)\b/g, "<span class='ft-code'>$1</span>")
+            .replace(/\b(LoRA)\b/g, "<span class='ft-code'>$1</span>");
+        }
+
         function renderFinetuneCards(selectedId){
           const grid = document.getElementById("finetuneGrid");
           if(!grid) return;
@@ -993,27 +1093,21 @@
               </div>
             `;
 
-            // 카드 클릭으로 선택. 단, 상세보기 버튼 클릭은 선택도 같이 되도록(UX)
             card.addEventListener("click", () => setSelectedFinetune(p.id));
-
             grid.appendChild(card);
           });
         }
 
         function renderAppliedPanel(){
-          // badge
           const badge = document.getElementById("appliedBadge");
           if (badge) badge.textContent = "적용됨";
 
-          // system prompt preview
           const sp = document.getElementById("appliedPrompt");
           if (sp) sp.textContent = promptPreview(appliedSystemPrompt, 160);
 
-          // finetune
           const ft = document.getElementById("appliedFinetune");
           if (ft) ft.textContent = finetuneLabelById(appliedFinetuneId);
 
-          // params
           const setKV = (id, v) => {
             const el = document.getElementById(id);
             if (el) el.textContent = String(v);
@@ -1025,7 +1119,7 @@
           setKV("applied_repetition_penalty", appliedParams.repetition_penalty);
         }
 
-        function readInputsToConfig(){
+        function readInputsToChatConfig(){
           const spInput = document.getElementById("systemPromptInput");
           const spRaw = spInput ? spInput.value : "";
           const sp = (spRaw || "").trim() || DEFAULT_SYSTEM_PROMPT;
@@ -1049,6 +1143,207 @@
           return { system_prompt: sp, finetune_id, params };
         }
 
+        /**************************************************************
+         * 8) Fine-tune settings: UI ↔ trainCfg binding
+         **************************************************************/
+        function setValue(id, v){
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (el.type === "checkbox") el.checked = !!v;
+          else el.value = (v === undefined || v === null) ? "" : String(v);
+        }
+
+        function getValue(id){
+          const el = document.getElementById(id);
+          if (!el) return null;
+          if (el.type === "checkbox") return !!el.checked;
+          return el.value;
+        }
+
+        function renderTrainCfgToUI(){
+          // data
+          setValue("ft_dataset_path", trainCfg.data.dataset_path);
+          setValue("ft_eval_path", trainCfg.data.eval_path);
+          setValue("ft_text_field", trainCfg.data.text_field);
+          setValue("ft_split_ratio", trainCfg.data.split_ratio);
+          setValue("ft_max_seq_length", trainCfg.data.max_seq_length);
+          setValue("ft_packing", trainCfg.data.packing);
+
+          // prompt
+          setValue("ft_template", trainCfg.prompt.template);
+          setValue("ft_instruction_key", trainCfg.prompt.instruction_key);
+          setValue("ft_response_key", trainCfg.prompt.response_key);
+          setValue("ft_custom_format", trainCfg.prompt.custom_format);
+
+          // lora
+          setValue("ft_lora_r", trainCfg.lora.r);
+          setValue("ft_lora_alpha", trainCfg.lora.alpha);
+          setValue("ft_lora_dropout", trainCfg.lora.dropout);
+          setValue("ft_lora_targets", trainCfg.lora.target_modules);
+          setValue("ft_lora_bias", trainCfg.lora.bias);
+
+          // quant
+          setValue("ft_4bit", trainCfg.quant.load_in_4bit);
+          setValue("ft_quant_type", trainCfg.quant.bnb_4bit_quant_type);
+          setValue("ft_compute_dtype", trainCfg.quant.bnb_4bit_compute_dtype);
+          setValue("ft_double_quant", trainCfg.quant.bnb_4bit_use_double_quant);
+
+          // train
+          setValue("ft_base_model", trainCfg.train.base_model);
+          setValue("ft_lr", trainCfg.train.learning_rate);
+          setValue("ft_bsz", trainCfg.train.per_device_train_batch_size);
+          setValue("ft_gas", trainCfg.train.gradient_accumulation_steps);
+          setValue("ft_max_steps", trainCfg.train.max_steps);
+          setValue("ft_warmup_ratio", trainCfg.train.warmup_ratio);
+          setValue("ft_weight_decay", trainCfg.train.weight_decay);
+          setValue("ft_sched", trainCfg.train.lr_scheduler_type);
+          setValue("ft_optim", trainCfg.train.optim);
+          setValue("ft_bf16", trainCfg.train.bf16);
+          setValue("ft_fp16", trainCfg.train.fp16);
+          setValue("ft_seed", trainCfg.train.seed);
+          setValue("ft_logging_steps", trainCfg.train.logging_steps);
+          setValue("ft_save_steps", trainCfg.train.save_steps);
+          setValue("ft_eval_steps", trainCfg.train.eval_steps);
+
+          // output
+          setValue("ft_output_dir", trainCfg.output.output_dir);
+          setValue("ft_run_name", trainCfg.output.run_name);
+          setValue("ft_save_total_limit", trainCfg.output.save_total_limit);
+          setValue("ft_push_to_hub", trainCfg.output.push_to_hub);
+          setValue("ft_hub_repo_id", trainCfg.output.hub_repo_id);
+
+          // template UI toggle
+          updateCustomTemplateVisibility();
+          updateEvalVisibility();
+        }
+
+        function updateCustomTemplateVisibility(){
+          const t = getValue("ft_template");
+          const wrap = document.getElementById("ft_custom_wrap");
+          if (!wrap) return;
+          wrap.style.display = (t === "custom") ? "block" : "none";
+        }
+
+        function updateEvalVisibility(){
+          const ratio = parseFloat(getValue("ft_split_ratio") || "0");
+          const evalPath = document.getElementById("ft_eval_path");
+          const evalSteps = document.getElementById("ft_eval_steps");
+          const hint = document.getElementById("ft_eval_hint");
+          const enable = (ratio > 0) || ((evalPath && evalPath.value || "").trim().length > 0);
+
+          if (evalSteps) evalSteps.disabled = !enable;
+          if (hint) hint.textContent = enable
+            ? "Eval이 활성화됩니다 (split_ratio>0 또는 eval_path 존재)."
+            : "Eval 비활성화 상태입니다. split_ratio를 0보다 크게 하거나 eval_path를 지정하세요.";
+        }
+
+        function readUIToTrainCfg(){
+          const cfg = structuredClone(trainCfg);
+
+          // helpers
+          const num = (id, def=0) => {
+            const v = parseFloat(getValue(id) ?? "");
+            return Number.isFinite(v) ? v : def;
+          };
+          const int = (id, def=0) => {
+            const v = parseInt(getValue(id) ?? "", 10);
+            return Number.isFinite(v) ? v : def;
+          };
+          const str = (id, def="") => {
+            const v = String(getValue(id) ?? "").trim();
+            return v.length ? v : def;
+          };
+          const bool = (id, def=false) => {
+            const v = getValue(id);
+            return (typeof v === "boolean") ? v : def;
+          };
+
+          // data
+          cfg.data.dataset_path = str("ft_dataset_path", cfg.data.dataset_path);
+          cfg.data.eval_path = str("ft_eval_path", "");
+          cfg.data.text_field = str("ft_text_field", cfg.data.text_field);
+          cfg.data.split_ratio = clamp(num("ft_split_ratio", 0), 0, 0.5);
+          cfg.data.max_seq_length = clamp(int("ft_max_seq_length", cfg.data.max_seq_length), 256, 8192);
+          cfg.data.packing = bool("ft_packing", false);
+
+          // prompt
+          cfg.prompt.template = str("ft_template", cfg.prompt.template);
+          cfg.prompt.instruction_key = str("ft_instruction_key", cfg.prompt.instruction_key);
+          cfg.prompt.response_key = str("ft_response_key", cfg.prompt.response_key);
+          cfg.prompt.custom_format = String(getValue("ft_custom_format") ?? "");
+
+          // lora
+          cfg.lora.r = clamp(int("ft_lora_r", cfg.lora.r), 1, 256);
+          cfg.lora.alpha = clamp(int("ft_lora_alpha", cfg.lora.alpha), 1, 512);
+          cfg.lora.dropout = clamp(num("ft_lora_dropout", cfg.lora.dropout), 0.0, 0.5);
+          cfg.lora.target_modules = str("ft_lora_targets", cfg.lora.target_modules);
+          cfg.lora.bias = str("ft_lora_bias", cfg.lora.bias);
+
+          // quant
+          cfg.quant.load_in_4bit = bool("ft_4bit", cfg.quant.load_in_4bit);
+          cfg.quant.bnb_4bit_quant_type = str("ft_quant_type", cfg.quant.bnb_4bit_quant_type);
+          cfg.quant.bnb_4bit_compute_dtype = str("ft_compute_dtype", cfg.quant.bnb_4bit_compute_dtype);
+          cfg.quant.bnb_4bit_use_double_quant = bool("ft_double_quant", cfg.quant.bnb_4bit_use_double_quant);
+
+          // train
+          cfg.train.base_model = str("ft_base_model", cfg.train.base_model);
+          cfg.train.learning_rate = clamp(num("ft_lr", cfg.train.learning_rate), 1e-6, 5e-3);
+          cfg.train.per_device_train_batch_size = clamp(int("ft_bsz", cfg.train.per_device_train_batch_size), 1, 64);
+          cfg.train.gradient_accumulation_steps = clamp(int("ft_gas", cfg.train.gradient_accumulation_steps), 1, 256);
+          cfg.train.max_steps = clamp(int("ft_max_steps", cfg.train.max_steps), 1, 100000);
+          cfg.train.warmup_ratio = clamp(num("ft_warmup_ratio", cfg.train.warmup_ratio), 0.0, 0.3);
+          cfg.train.weight_decay = clamp(num("ft_weight_decay", cfg.train.weight_decay), 0.0, 1.0);
+          cfg.train.lr_scheduler_type = str("ft_sched", cfg.train.lr_scheduler_type);
+          cfg.train.optim = str("ft_optim", cfg.train.optim);
+          cfg.train.bf16 = bool("ft_bf16", cfg.train.bf16);
+          cfg.train.fp16 = bool("ft_fp16", cfg.train.fp16);
+          cfg.train.seed = clamp(int("ft_seed", cfg.train.seed), 0, 2147483647);
+          cfg.train.logging_steps = clamp(int("ft_logging_steps", cfg.train.logging_steps), 1, 100000);
+          cfg.train.save_steps = clamp(int("ft_save_steps", cfg.train.save_steps), 1, 100000);
+          cfg.train.eval_steps = clamp(int("ft_eval_steps", cfg.train.eval_steps), 0, 100000);
+
+          // output
+          cfg.output.output_dir = str("ft_output_dir", cfg.output.output_dir);
+          cfg.output.run_name = str("ft_run_name", cfg.output.run_name);
+          cfg.output.save_total_limit = clamp(int("ft_save_total_limit", cfg.output.save_total_limit), 1, 50);
+          cfg.output.push_to_hub = bool("ft_push_to_hub", cfg.output.push_to_hub);
+          cfg.output.hub_repo_id = str("ft_hub_repo_id", "");
+
+          return cfg;
+        }
+
+        function buildFinetunePayload(){
+          const ftHidden = document.getElementById("finetuneInput");
+          const finetune_id = (ftHidden && ftHidden.value) ? ftHidden.value : appliedFinetuneId;
+
+          const cfg = readUIToTrainCfg();
+
+          // “체크포인트 프리셋”은 파인튜닝 시작점/재개로 사용한다는 컨셉
+          // (백엔드에서 finetune_id -> 실제 경로/어댑터 로드 전략으로 매핑)
+          return {
+            finetune_id,
+            train_cfg: cfg
+          };
+        }
+
+        function logAppend(line){
+          const box = document.getElementById("ft_logs");
+          if (!box) return;
+          const t = String(line ?? "");
+          box.textContent = (box.textContent + (box.textContent ? "\n" : "") + t).slice(-8000);
+          box.scrollTop = box.scrollHeight;
+        }
+
+        function setFtStatus(text, pill){
+          const el = document.getElementById("ft_status");
+          if (el) el.textContent = text || "-";
+          const p = document.getElementById("ft_status_pill");
+          if (p && pill) p.textContent = pill;
+        }
+
+        /**************************************************************
+         * 9) DOM Ready
+         **************************************************************/
         document.addEventListener("DOMContentLoaded", () => {
           const textarea = document.getElementById("prompt");
           const sendBtn = document.getElementById("send");
@@ -1071,15 +1366,30 @@
           const repetition_penalty = document.getElementById("repetition_penalty");
           const repetition_penalty_num = document.getElementById("repetition_penalty_num");
 
-          // Fine-tuning cards init (입력값으로만 세팅)
+          // Fine-tuning cards init
           renderFinetuneCards(appliedFinetuneId);
           setSelectedFinetune(appliedFinetuneId);
 
-          // 초기 "적용중"은 디폴트
+          // 초기 적용중 (채팅)
           appliedSystemPrompt = DEFAULT_SYSTEM_PROMPT;
           appliedParams = { ...DEFAULT_PRESET };
           renderAppliedPanel();
           scrollToBottom(wrapper);
+
+          // Fine-tune settings init
+          renderTrainCfgToUI();
+          setFtStatus("대기", "Ready");
+          logAppend("[UI] Fine-tune settings loaded.");
+
+          // change handlers
+          const templateSel = document.getElementById("ft_template");
+          if (templateSel) templateSel.addEventListener("change", updateCustomTemplateVisibility);
+
+          const splitRatio = document.getElementById("ft_split_ratio");
+          if (splitRatio) splitRatio.addEventListener("input", updateEvalVisibility);
+
+          const evalPath = document.getElementById("ft_eval_path");
+          if (evalPath) evalPath.addEventListener("input", updateEvalVisibility);
 
           // Send enable/disable
           sendBtn.disabled = true;
@@ -1096,112 +1406,100 @@
 
           let isSending = false;
           let isResetting = false;
+          let isFinetuning = false;
 
-          // Send (항상 "현재 적용중" 값을 JSON에 포함해서 전송)
+          // Send (채팅: 적용중 값으로 /llama 호출)
           sendBtn.addEventListener("click", async () => {
-              if (isSending || isResetting) return;
+            if (isSending || isResetting) return;
 
-              const text = textarea.value.trim();
-              if (!text) return;
+            const text = textarea.value.trim();
+            if (!text) return;
 
-              isSending = true;
+            isSending = true;
 
-              const userMsg = document.createElement("div");
-              userMsg.className = "msg user";
-              userMsg.innerText = text;
-              chat.appendChild(userMsg);
+            const userMsg = document.createElement("div");
+            userMsg.className = "msg user";
+            userMsg.innerText = text;
+            chat.appendChild(userMsg);
+            pushHistory("user", text);
 
-              // 여기 추가: 유저 발화 쿠키에 저장
-              pushHistory("user", text);
+            const typing = document.createElement("div");
+            typing.className = "msg assistant typing";
+            typing.innerText = "";
+            chat.appendChild(typing);
 
-              const typing = document.createElement("div");
-              typing.className = "msg assistant typing";
-              typing.innerText = "";
-              chat.appendChild(typing);
+            scrollToBottom(wrapper);
 
+            textarea.value = "";
+            textarea.disabled = true;
+            sendBtn.disabled = true;
+            resetChatBtn.disabled = true;
+
+            try {
+              const res = await fetch("/llama", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                  prompt: text,
+                  system_prompt: appliedSystemPrompt,
+                  finetune_id: appliedFinetuneId,
+                  ...appliedParams,
+                  history: chatHistory
+                })
+              });
+
+              if (!res.ok) throw new Error("HTTP " + res.status);
+
+              const ct = res.headers.get("content-type") || "";
+              if (!ct.includes("application/json")) throw new Error("Invalid response type");
+
+              const data = await res.json();
+
+              typing.remove();
+
+              const answerText = (data && data.answer) ? data.answer : "(빈 응답)";
+              const botMsg = document.createElement("div");
+              botMsg.className = "msg assistant";
+              botMsg.innerText = answerText;
+              chat.appendChild(botMsg);
+
+              pushHistory("assistant", answerText);
               scrollToBottom(wrapper);
 
-              textarea.value = "";
-              textarea.disabled = true;
+            } catch (err) {
+              typing.remove();
+              const errMsg = document.createElement("div");
+              errMsg.className = "msg assistant";
+              errMsg.innerText = "⚠️ 오류 발생\n" + err;
+              chat.appendChild(errMsg);
+              scrollToBottom(wrapper);
+            } finally {
+              textarea.disabled = false;
+              textarea.focus();
+              isSending = false;
               sendBtn.disabled = true;
-              resetChatBtn.disabled = true;
-
-              try {
-                const res = await fetch("/llama", {
-                  method: "POST",
-                  headers: {"Content-Type": "application/json"},
-                  body: JSON.stringify({
-                    prompt: text,
-                    system_prompt: appliedSystemPrompt,
-                    finetune_id: appliedFinetuneId,
-                    ...appliedParams,
-                    // 컨텍스트로 보낼 대화내역
-                    history: chatHistory
-                  })
-                });
-
-                if (!res.ok) throw new Error("HTTP " + res.status);
-
-                const ct = res.headers.get("content-type") || "";
-                if (!ct.includes("application/json")) {
-                  throw new Error("Invalid response type");
-                }
-
-                const data = await res.json();
-
-                typing.remove();
-
-                const answerText = (data && data.answer) ? data.answer : "(빈 응답)";
-
-                const botMsg = document.createElement("div");
-                botMsg.className = "msg assistant";
-                botMsg.innerText = answerText;
-                chat.appendChild(botMsg);
-
-                // 어시스턴트 응답도 쿠키에 저장
-                pushHistory("assistant", answerText);
-
-                scrollToBottom(wrapper);
-
-              } catch (err) {
-                typing.remove();
-
-                const errMsg = document.createElement("div");
-                errMsg.className = "msg assistant";
-                errMsg.innerText = "⚠️ 오류 발생\n" + err;
-                chat.appendChild(errMsg);
-
-                scrollToBottom(wrapper);
-              } finally {
-                textarea.disabled = false;
-                textarea.focus();
-                isSending = false;
-
-                sendBtn.disabled = true;
-                resetChatBtn.disabled = false;
-              }
+              resetChatBtn.disabled = false;
+            }
           });
 
-          // Reset Chat (서버 FORM 리셋 + GET 재로드 → 디폴트로 복귀)
+          // Reset Chat
           resetChatBtn.addEventListener("click", () => {
-              if (isSending || isResetting) return;
+            if (isSending || isResetting) return;
 
-              const ok = confirm("대화 내역을 모두 초기화할까요?\n(새로고침해도 복구되지 않습니다)");
-              if (!ok) return;
+            const ok = confirm("대화 내역을 모두 초기화할까요?\n(새로고침해도 복구되지 않습니다)");
+            if (!ok) return;
 
-              // 여기 추가: 쿠키 히스토리 삭제
-              deleteCookie(CHAT_COOKIE_NAME);
-              chatHistory = [];
+            deleteCookie(CHAT_COOKIE_NAME);
+            chatHistory = [];
 
-              isResetting = true;
+            isResetting = true;
 
-              textarea.disabled = true;
-              sendBtn.disabled = true;
-              resetChatBtn.disabled = true;
+            textarea.disabled = true;
+            sendBtn.disabled = true;
+            resetChatBtn.disabled = true;
 
-              setOverlay(true, "대화 초기화중입니다…");
-
-              resetChatForm.submit();
+            setOverlay(true, "대화 초기화중입니다…");
+            resetChatForm.submit();
           });
 
           // Hyper Parameter Sync
@@ -1211,7 +1509,7 @@
           bindRangeNumber(max_tokens, max_tokens_num);
           bindRangeNumber(repetition_penalty, repetition_penalty_num);
 
-          // Reset Params: "입력값만" 디폴트로 + system prompt 입력도 디폴트로 + finetune 입력도 디폴트로 (적용은 Apply)
+          // Reset Params (채팅 설정만 디폴트로)
           const resetParamsBtn = document.getElementById("resetParams");
           resetParamsBtn.addEventListener("click", () => {
             setParam("temperature", DEFAULT_PRESET.temperature);
@@ -1219,33 +1517,102 @@
             setParam("top_k", DEFAULT_PRESET.top_k);
             setParam("max_tokens", DEFAULT_PRESET.max_tokens);
             setParam("repetition_penalty", DEFAULT_PRESET.repetition_penalty);
-
             if (systemPromptInput) systemPromptInput.value = DEFAULT_SYSTEM_PROMPT;
 
-            // finetune input reset (UI만, 적용은 Apply)
             const defFt = DEFAULT_FINETUNE_ID || (FINETUNE_PRESETS[0] ? FINETUNE_PRESETS[0].id : "");
             if(defFt) setSelectedFinetune(defFt);
           });
 
-          // Apply: 서버에 저장/전송 X, 클라 "적용중"만 갱신 + 현황판 업데이트
+          // Apply Settings (채팅 적용만)
           const paramForm = document.getElementById("paramForm");
           paramForm.addEventListener("submit", (e) => {
             e.preventDefault();
-
             setOverlay(true, "프롬프트&하이퍼파라미터 적용중입니다…");
 
-            const cfg = readInputsToConfig();
+            const cfg = readInputsToChatConfig();
             appliedSystemPrompt = cfg.system_prompt;
             appliedParams = { ...cfg.params };
             appliedFinetuneId = cfg.finetune_id;
 
             renderAppliedPanel();
-
-            // UX: 잠깐만 보여주고 닫기
             setTimeout(() => setOverlay(false), 250);
           });
 
-          // overlay 위에서 이벤트 먹기
+          // Fine-tune: Reset Fine-tune Settings
+          const ftResetBtn = document.getElementById("ft_reset");
+          ftResetBtn.addEventListener("click", () => {
+            trainCfg = structuredClone(FALLBACK_TRAIN_CFG);
+            // 서버 default_train_cfg가 있으면 다시 merge
+            trainCfg = deepMerge(trainCfg, SERVER_DEFAULT_TRAIN_CFG || {});
+            renderTrainCfgToUI();
+            logAppend("[UI] Fine-tune settings reset.");
+          });
+
+          // Fine-tune: Export JSON (사용자 확인용)
+          const ftExportBtn = document.getElementById("ft_export");
+          ftExportBtn.addEventListener("click", () => {
+            const payload = buildFinetunePayload();
+            const out = document.getElementById("ft_payload_preview");
+            if (out) out.value = JSON.stringify(payload, null, 2);
+            logAppend("[UI] Payload exported (preview updated).");
+          });
+
+          // Fine-tune: Start
+          const ftStartBtn = document.getElementById("ft_start");
+          ftStartBtn.addEventListener("click", async () => {
+            if (isFinetuning) return;
+
+            const payload = buildFinetunePayload();
+
+            // 최소 검증
+            if (!payload.train_cfg.data.dataset_path) {
+              alert("dataset_path가 비어있습니다.");
+              return;
+            }
+            if (payload.train_cfg.prompt.template === "custom" && !(payload.train_cfg.prompt.custom_format || "").trim()) {
+              alert("template=custom인데 custom_format이 비어있습니다.");
+              return;
+            }
+
+            isFinetuning = true;
+            setOverlay(true, "파인튜닝 시작 요청중입니다…");
+            setFtStatus("요청중", "Starting");
+            logAppend("[POST] /finetune/start");
+            logAppend(JSON.stringify(payload));
+
+            try{
+              const res = await fetch("/finetune/start", {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify(payload)
+              });
+
+              if (!res.ok) throw new Error("HTTP " + res.status);
+
+              const ct = res.headers.get("content-type") || "";
+              const data = ct.includes("application/json") ? await res.json() : { ok: true };
+
+              // 백엔드가 job_id를 내려주면 polling 가능
+              // expected: { job_id: "...", message: "..."}
+              const jobId = data && data.job_id ? data.job_id : "";
+              logAppend("[OK] finetune started" + (jobId ? (" job_id=" + jobId) : ""));
+
+              setFtStatus(jobId ? ("실행중 · " + jobId) : "실행중", "Running");
+
+              // optional polling (백엔드 구현 시)
+              // pollFinetune(jobId);
+
+            }catch(err){
+              logAppend("[ERR] " + err);
+              setFtStatus("실패", "Failed");
+              alert("파인튜닝 시작 실패: " + err);
+            }finally{
+              setOverlay(false);
+              isFinetuning = false;
+            }
+          });
+
+          // overlay 이벤트 먹기
           const overlay = document.getElementById("overlay");
           overlay.addEventListener("click", (e) => e.preventDefault());
           overlay.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
@@ -1254,22 +1621,30 @@
           }, { capture: true });
         });
 
-        function formatDetailValue(v){
-          const s = String(v ?? "");
-          // 괄호/등호 포함된 구간은 살짝 code 느낌으로 보여주기(과하면 지저분해지니 최소만)
-          return s
-            .replace(/\b(global_step=\d+)\b/g, "<span class='ft-code'>$1</span>")
-            .replace(/\b(max_steps=\d+)\b/g, "<span class='ft-code'>$1</span>")
-            .replace(/\b(save_steps=\d+)\b/g, "<span class='ft-code'>$1</span>")
-            .replace(/\b(4-bit NF4)\b/g, "<span class='ft-code'>$1</span>")
-            .replace(/\b(LoRA)\b/g, "<span class='ft-code'>$1</span>");
+        // (선택) 폴링 샘플: 백엔드 구현하면 사용
+        async function pollFinetune(jobId){
+          if (!jobId) return;
+          try{
+            const res = await fetch(`/finetune/status?job_id=${encodeURIComponent(jobId)}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            // expected: { status:"running|done|failed", logs:["..."], progress:{...} }
+            if (Array.isArray(data.logs)) data.logs.forEach(line => logAppend(line));
+            if (data.status === "done") setFtStatus("완료", "Done");
+            else if (data.status === "failed") setFtStatus("실패", "Failed");
+            else setFtStatus("실행중 · " + jobId, "Running");
+
+            if (data.status === "running") setTimeout(() => pollFinetune(jobId), 1500);
+          }catch(e){
+            // ignore
+          }
         }
     </script>
 </head>
 
 <body>
 <div class="overlay" id="overlay">
-    <div class="overlay-box" id="overlayText">프롬프트&하이퍼파라미터 적용중입니다…</div>
+    <div class="overlay-box" id="overlayText">처리중…</div>
 </div>
 
 <div class="page-wrapper">
@@ -1307,7 +1682,6 @@
     </nav>
 
     <div class="app">
-
         <!-- LEFT -->
         <div class="main">
             <header>
@@ -1315,7 +1689,6 @@
 
                 <button id="resetChat" type="button" class="reset-chat-btn">Reset Chat</button>
 
-                <!-- reset은 서버가 redirect로 처리 -->
                 <form id="resetChatForm" method="post" style="display:none;">
                     <input type="hidden" name="action" value="reset_chat">
                 </form>
@@ -1339,15 +1712,16 @@
 
         <!-- RIGHT -->
         <form id="paramForm" method="post" class="settings">
-            <!-- 현황판 (현재 적용중) -->
-            <div class="status-card">
+
+            <!-- (A) 현황판: 채팅 적용중 -->
+            <div class="card-block">
                 <div class="status-top">
-                    <div class="status-title">현재 적용중</div>
+                    <div class="status-title">현재 적용중 (Chat)</div>
                     <div id="appliedBadge" class="status-badge">디폴트</div>
                 </div>
 
                 <div class="status-row">
-                    <div class="status-label">Fine-tuning</div>
+                    <div class="status-label">Checkpoint</div>
                     <div class="status-value">
                         <span id="appliedFinetune" class="status-ellipsis"></span>
                     </div>
@@ -1384,79 +1758,425 @@
                 </div>
             </div>
 
-            <!-- Fine-tuning Preset -->
+            <!-- (B) 체크포인트 프리셋: 유지 -->
             <div class="finetune-wrap">
                 <div class="finetune-head">
                     <div class="finetune-head-left">
-                        <div class="finetune-head-title">Fine-tuning</div>
-                        <div class="finetune-head-desc">체크포인트(프리셋)를 선택하세요.</div>
+                        <div class="finetune-head-title">Checkpoint Preset</div>
+                        <div class="finetune-head-desc">체크포인트(가중치/프리셋)를 선택하세요. (Chat/Finetune 모두 동일 선택값을 기준으로 동작)</div>
                     </div>
                 </div>
-
                 <div id="finetuneGrid" class="finetune-grid"></div>
                 <input type="hidden" id="finetuneInput" name="finetune_id" value="">
             </div>
 
-            <h3>System Prompt</h3>
-            <textarea id="systemPromptInput" name="system_prompt" rows="4">{{ default_system_prompt if default_system_prompt is defined else system_prompt }}</textarea>
+            <!-- (C) 채팅 설정 -->
+            <div class="card-block">
+                <div class="section-title">
+                    <div class="t">Chat Settings</div>
+                    <div class="pill-mini">Inference</div>
+                </div>
 
-            <h3 style="margin-top:16px;">Hyper Parameters</h3>
+                <div class="field">
+                    <label>System Prompt</label>
+                    <textarea id="systemPromptInput" name="system_prompt" rows="4">{{ default_system_prompt if default_system_prompt is defined else system_prompt }}</textarea>
+                </div>
 
-            <div class="param">
-                <label>Temperature (창의성/무작위성)</label>
-                <div class="param-row">
-                    <input id="temperature" type="range" min="0.1" max="1.5" step="0.1"
-                           value="{{ default_params.temperature }}">
-                    <input id="temperature_num" type="number" min="0.1" max="1.5" step="0.1"
-                           value="{{ default_params.temperature }}">
+                <div class="divider"></div>
+
+                <div class="field">
+                    <label>Temperature (창의성/무작위성)</label>
+                    <div class="grid-2">
+                        <input id="temperature" type="range" min="0.1" max="1.5" step="0.1"
+                               value="{{ default_params.temperature }}">
+                        <input id="temperature_num" type="number" min="0.1" max="1.5" step="0.1"
+                               value="{{ default_params.temperature }}">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Top-p (누적확률 기준)</label>
+                    <div class="grid-2">
+                        <input id="top_p" type="range" min="0.1" max="1" step="0.05" value="{{ default_params.top_p }}">
+                        <input id="top_p_num" type="number" min="0.1" max="1" step="0.05"
+                               value="{{ default_params.top_p }}">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Top-k (후보 토큰 개수)</label>
+                    <div class="grid-2">
+                        <input id="top_k" type="range" min="0" max="100" step="1" value="{{ default_params.top_k }}">
+                        <input id="top_k_num" type="number" min="0" max="100" step="1"
+                               value="{{ default_params.top_k }}">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Max Tokens (최대 생성 길이)</label>
+                    <div class="grid-2">
+                        <input id="max_tokens" type="range" min="32" max="2048" step="32"
+                               value="{{ default_params.max_tokens }}">
+                        <input id="max_tokens_num" type="number" min="32" max="2048" step="32"
+                               value="{{ default_params.max_tokens }}">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Repetition Penalty (반복 억제 강도)</label>
+                    <div class="grid-2">
+                        <input id="repetition_penalty" type="range" min="1" max="1.5" step="0.05"
+                               value="{{ default_params.repetition_penalty }}">
+                        <input id="repetition_penalty_num" type="number" min="1" max="1.5" step="0.05"
+                               value="{{ default_params.repetition_penalty }}">
+                    </div>
+                </div>
+
+                <button type="button" id="resetParams" class="btn-ghost">Reset Chat Settings</button>
+                <button class="btn-brand" type="submit">Apply Chat Settings</button>
+            </div>
+
+            <!-- (D) 파인튜닝 설정(사용자가 직접 조절) -->
+            <div class="card-block">
+                <div class="section-title">
+                    <div class="t">Fine-tune Settings</div>
+                    <div class="pill-mini">Training</div>
+                </div>
+
+                <div class="hint">
+                    체크포인트 선택(위 프리셋) + 아래 설정값으로 <span class="mono">POST /finetune/start</span> 를 호출합니다.
+                </div>
+
+                <!-- Data -->
+                <div class="divider"></div>
+                <div class="section-title">
+                    <div class="t">Data</div>
+                    <div class="pill-mini">Dataset</div>
+                </div>
+
+                <div class="field">
+                    <label>dataset_path (학습 데이터 경로: jsonl 권장)</label>
+                    <input id="ft_dataset_path" type="text" placeholder="/workspace/data/train.jsonl">
+                </div>
+
+                <div class="field">
+                    <label>eval_path (선택: 검증 데이터 경로)</label>
+                    <input id="ft_eval_path" type="text" placeholder="">
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>text_field (jsonl에서 사용할 텍스트 키)</label>
+                        <input id="ft_text_field" type="text" placeholder="text">
+                    </div>
+                    <div class="field">
+                        <label>split_ratio (0이면 eval 미사용)</label>
+                        <input id="ft_split_ratio" type="number" step="0.01" min="0" max="0.5" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>max_seq_length</label>
+                        <input id="ft_max_seq_length" type="number" step="1" min="256" max="8192" placeholder="2048">
+                    </div>
+                    <div class="field">
+                        <label>packing (짧은 샘플 패킹)</label>
+                        <select id="ft_packing">
+                            <option value="false">false</option>
+                            <option value="true">true</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="hint" id="ft_eval_hint">-</div>
+
+                <!-- Prompt -->
+                <div class="divider"></div>
+                <div class="section-title">
+                    <div class="t">Prompt Format</div>
+                    <div class="pill-mini">Template</div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>template</label>
+                        <select id="ft_template">
+                            <option value="alpaca">alpaca</option>
+                            <option value="chatml">chatml</option>
+                            <option value="custom">custom</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>instruction_key / response_key</label>
+                        <div class="grid-2">
+                            <input id="ft_instruction_key" type="text" placeholder="instruction">
+                            <input id="ft_response_key" type="text" placeholder="response">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field" id="ft_custom_wrap" style="display:none;">
+                    <label>custom_format (template=custom일 때 사용)</label>
+                    <textarea id="ft_custom_format" rows="4"
+                              placeholder="예: Below is ... ### Instruction: {instruction} ### Response: {response}"></textarea>
+                </div>
+
+                <!-- LoRA -->
+                <div class="divider"></div>
+                <div class="section-title">
+                    <div class="t">LoRA</div>
+                    <div class="pill-mini">PEFT</div>
+                </div>
+
+                <div class="grid-3">
+                    <div class="field">
+                        <label>r</label>
+                        <input id="ft_lora_r" type="number" step="1" min="1" max="256">
+                    </div>
+                    <div class="field">
+                        <label>alpha</label>
+                        <input id="ft_lora_alpha" type="number" step="1" min="1" max="512">
+                    </div>
+                    <div class="field">
+                        <label>dropout</label>
+                        <input id="ft_lora_dropout" type="number" step="0.01" min="0" max="0.5">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>target_modules (CSV)</label>
+                    <input id="ft_lora_targets" type="text" placeholder="q_proj,k_proj,v_proj,o_proj">
+                </div>
+
+                <div class="field">
+                    <label>bias</label>
+                    <select id="ft_lora_bias">
+                        <option value="none">none</option>
+                        <option value="all">all</option>
+                        <option value="lora_only">lora_only</option>
+                    </select>
+                </div>
+
+                <!-- Quant -->
+                <div class="divider"></div>
+                <div class="section-title">
+                    <div class="t">Quantization</div>
+                    <div class="pill-mini">bitsandbytes</div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>load_in_4bit</label>
+                        <select id="ft_4bit">
+                            <option value="true">true</option>
+                            <option value="false">false</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>bnb_4bit_use_double_quant</label>
+                        <select id="ft_double_quant">
+                            <option value="true">true</option>
+                            <option value="false">false</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>bnb_4bit_quant_type</label>
+                        <select id="ft_quant_type">
+                            <option value="nf4">nf4</option>
+                            <option value="fp4">fp4</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>bnb_4bit_compute_dtype</label>
+                        <select id="ft_compute_dtype">
+                            <option value="bfloat16">bfloat16</option>
+                            <option value="float16">float16</option>
+                            <option value="float32">float32</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Train -->
+                <div class="divider"></div>
+                <div class="section-title">
+                    <div class="t">Training</div>
+                    <div class="pill-mini">Args</div>
+                </div>
+
+                <div class="field">
+                    <label>base_model</label>
+                    <input id="ft_base_model" type="text" placeholder="meta-llama/Meta-Llama-3-8B">
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>learning_rate</label>
+                        <input id="ft_lr" type="number" step="0.000001" min="0.000001" max="0.005">
+                    </div>
+                    <div class="field">
+                        <label>per_device_train_batch_size</label>
+                        <input id="ft_bsz" type="number" step="1" min="1" max="64">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>gradient_accumulation_steps</label>
+                        <input id="ft_gas" type="number" step="1" min="1" max="256">
+                    </div>
+                    <div class="field">
+                        <label>max_steps</label>
+                        <input id="ft_max_steps" type="number" step="1" min="1" max="100000">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>warmup_ratio</label>
+                        <input id="ft_warmup_ratio" type="number" step="0.01" min="0" max="0.3">
+                    </div>
+                    <div class="field">
+                        <label>weight_decay</label>
+                        <input id="ft_weight_decay" type="number" step="0.01" min="0" max="1">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>lr_scheduler_type</label>
+                        <select id="ft_sched">
+                            <option value="cosine">cosine</option>
+                            <option value="linear">linear</option>
+                            <option value="constant">constant</option>
+                            <option value="constant_with_warmup">constant_with_warmup</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>optim</label>
+                        <select id="ft_optim">
+                            <option value="paged_adamw_8bit">paged_adamw_8bit</option>
+                            <option value="paged_adamw_32bit">paged_adamw_32bit</option>
+                            <option value="adamw_torch">adamw_torch</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-3">
+                    <div class="field">
+                        <label>bf16</label>
+                        <select id="ft_bf16">
+                            <option value="true">true</option>
+                            <option value="false">false</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>fp16</label>
+                        <select id="ft_fp16">
+                            <option value="false">false</option>
+                            <option value="true">true</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>seed</label>
+                        <input id="ft_seed" type="number" step="1" min="0" max="2147483647">
+                    </div>
+                </div>
+
+                <div class="grid-3">
+                    <div class="field">
+                        <label>logging_steps</label>
+                        <input id="ft_logging_steps" type="number" step="1" min="1" max="100000">
+                    </div>
+                    <div class="field">
+                        <label>save_steps</label>
+                        <input id="ft_save_steps" type="number" step="1" min="1" max="100000">
+                    </div>
+                    <div class="field">
+                        <label>eval_steps (eval 활성 시)</label>
+                        <input id="ft_eval_steps" type="number" step="1" min="0" max="100000">
+                    </div>
+                </div>
+
+                <!-- Output -->
+                <div class="divider"></div>
+                <div class="section-title">
+                    <div class="t">Output</div>
+                    <div class="pill-mini">Artifacts</div>
+                </div>
+
+                <div class="field">
+                    <label>output_dir</label>
+                    <input id="ft_output_dir" type="text" placeholder="/workspace/fine_tune_output">
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>run_name</label>
+                        <input id="ft_run_name" type="text" placeholder="llama3_lora_sft">
+                    </div>
+                    <div class="field">
+                        <label>save_total_limit</label>
+                        <input id="ft_save_total_limit" type="number" step="1" min="1" max="50">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>push_to_hub</label>
+                        <select id="ft_push_to_hub">
+                            <option value="false">false</option>
+                            <option value="true">true</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>hub_repo_id (push_to_hub=true일 때)</label>
+                        <input id="ft_hub_repo_id" type="text" placeholder="">
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="divider"></div>
+                <div class="section-title">
+                    <div class="t">Run</div>
+                    <div class="pill-mini" id="ft_status_pill">Ready</div>
+                </div>
+
+                <div class="field">
+                    <label>Status</label>
+                    <input id="ft_status" type="text" value="-" disabled>
+                </div>
+
+                <div class="inline-row">
+                    <button type="button" id="ft_reset" class="btn-ghost" style="margin-top:0;">Reset Fine-tune
+                        Settings
+                    </button>
+                </div>
+
+                <div class="inline-row">
+                    <button type="button" id="ft_export" class="btn-ghost" style="margin-top:0;">Export Payload JSON
+                    </button>
+                </div>
+
+                <div class="field">
+                    <label>Payload Preview (JSON)</label>
+                    <textarea id="ft_payload_preview" rows="7" class="mono"
+                              placeholder="Export를 누르면 여기에 payload가 표시됩니다."></textarea>
+                </div>
+
+                <button type="button" id="ft_start" class="btn-brand">Start Fine-tune</button>
+
+                <div class="divider"></div>
+                <div class="field">
+                    <label>Logs</label>
+                    <div id="ft_logs" class="logbox mono"></div>
                 </div>
             </div>
 
-            <div class="param">
-                <label>Top-p (누적확률 기준)</label>
-                <div class="param-row">
-                    <input id="top_p" type="range" min="0.1" max="1" step="0.05" value="{{ default_params.top_p }}">
-                    <input id="top_p_num" type="number" min="0.1" max="1" step="0.05"
-                           value="{{ default_params.top_p }}">
-                </div>
-            </div>
-
-            <div class="param">
-                <label>Top-k (후보 토큰 개수)</label>
-                <div class="param-row">
-                    <input id="top_k" type="range" min="0" max="100" step="1" value="{{ default_params.top_k }}">
-                    <input id="top_k_num" type="number" min="0" max="100" step="1" value="{{ default_params.top_k }}">
-                </div>
-            </div>
-
-            <div class="param">
-                <label>Max Tokens (최대 생성 길이)</label>
-                <div class="param-row">
-                    <input id="max_tokens" type="range" min="32" max="2048" step="32"
-                           value="{{ default_params.max_tokens }}">
-                    <input id="max_tokens_num" type="number" min="32" max="2048" step="32"
-                           value="{{ default_params.max_tokens }}">
-                </div>
-            </div>
-
-            <div class="param">
-                <label>Repetition Penalty (반복 억제 강도)</label>
-                <div class="param-row">
-                    <input id="repetition_penalty" type="range" min="1" max="1.5" step="0.05"
-                           value="{{ default_params.repetition_penalty }}">
-                    <input id="repetition_penalty_num" type="number" min="1" max="1.5" step="0.05"
-                           value="{{ default_params.repetition_penalty }}">
-                </div>
-            </div>
-
-            <!-- Apply는 서버 저장 X: JS가 submit을 막고 '적용중'만 갱신 -->
-            <button type="button" id="resetParams">
-                Reset to Default
-            </button>
-
-            <button class="apply" type="submit">Apply Settings</button>
         </form>
-
     </div>
 </div>
 </body>
